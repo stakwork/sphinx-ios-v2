@@ -1,0 +1,21 @@
+#include "storage/file_db_id_utils.h"
+
+#include "common/exception/runtime.h"
+#include <format>
+
+namespace lbug::storage {
+void FileDBIDUtils::verifyDatabaseID(const common::FileInfo& fileInfo,
+    common::uuid expectedDatabaseID, common::uuid databaseID) {
+    if (expectedDatabaseID.value != databaseID.value) {
+        throw common::RuntimeException(std::format(
+            "Database ID for temporary file '{}' does not match the current database. This file "
+            "may have been left behind from a previous database with the same name. If it is safe "
+            "to do so, please delete this file and restart the database.",
+            fileInfo.path));
+    }
+}
+
+void FileDBIDUtils::writeDatabaseID(common::Serializer& ser, common::uuid databaseID) {
+    ser.write(databaseID);
+}
+} // namespace lbug::storage

@@ -1,0 +1,64 @@
+#pragma once
+
+#include <atomic>
+
+#include "common/types/types.h"
+
+namespace lbug {
+namespace planner {
+class Schema;
+} // namespace planner
+
+namespace processor {
+
+// EXTENSION ABI: descriptors cross the extension boundary (e.g. ResultSet pooling compares
+// them across binaries). NEVER reorder/remove data members; ALWAYS append new members at the
+// END (see #971).
+struct DataChunkDescriptor {
+    bool isSingleState;
+    std::vector<common::LogicalType> logicalTypes;
+
+    explicit DataChunkDescriptor(bool isSingleState) : isSingleState{isSingleState} {}
+    DataChunkDescriptor(const DataChunkDescriptor& other)
+        : isSingleState{other.isSingleState},
+          logicalTypes(common::LogicalType::copy(other.logicalTypes)) {}
+
+    inline std::unique_ptr<DataChunkDescriptor> copy() const {
+        return std::make_unique<DataChunkDescriptor>(*this);
+    }
+};
+
+// EXTENSION ABI: see DataChunkDescriptor above. NEVER reorder/remove data members; ALWAYS
+// append new members at the END (see #971).
+struct LBUG_API ResultSetDescriptor {
+    // Monotonically increasing identity that survives pointer reuse (ABA
+    // prevention).  Per-database ResultSet pooling in ProcessorTask::run()
+    // compares this ID instead of the raw pointer so that a descriptor
+    // allocated at the same address as a freed one is never confused with it.
+    // copy() preserves the id: a copy semantically represents the same descriptor
+    // slot (same plan position, same content). In particular the per-execution
+    // re-attach of cached-plan sink descriptors (ClientContext::attachSinkDescriptors)
+    // must carry the same id across executions, otherwise the per-database ResultSetPool
+    // would miss on every execution of the same prepared statement.
+    static inline std::atomic<uint64_t> nextID{0};
+    uint64_t id;
+
+    std::vector<std::unique_ptr<DataChunkDescriptor>> dataChunkDescriptors;
+
+    ResultSetDescriptor() : id{nextID.fetch_add(1, std::memory_order_relaxed)} {}
+    explicit ResultSetDescriptor(
+        std::vector<std::unique_ptr<DataChunkDescriptor>> dataChunkDescriptors)
+        : id{nextID.fetch_add(1, std::memory_order_relaxed)},
+          dataChunkDescriptors{std::move(dataChunkDescriptors)} {}
+    explicit ResultSetDescriptor(planner::Schema* schema);
+    DELETE_BOTH_COPY(ResultSetDescriptor);
+
+    std::unique_ptr<ResultSetDescriptor> copy() const;
+
+    static std::unique_ptr<ResultSetDescriptor> EmptyDescriptor() {
+        return std::make_unique<ResultSetDescriptor>();
+    }
+};
+
+} // namespace processor
+} // namespace lbug

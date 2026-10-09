@@ -1,0 +1,140 @@
+#include "common/assert.h"
+#include "common/constants.h"
+#include "common/exception/binder.h"
+#include "common/string_utils.h"
+#include "parser/copy.h"
+#include "parser/expression/parsed_literal_expression.h"
+#include "parser/scan_source.h"
+#include "parser/transformer.h"
+#include <format>
+
+using namespace lbug::common;
+
+namespace lbug {
+namespace parser {
+
+std::unique_ptr<Statement> Transformer::transformCopyTo(CypherParser::IC_CopyTOContext& ctx) {
+    std::string filePath = transformStringLiteral(*ctx.StringLiteral());
+    auto regularQuery = transformQuery(*ctx.oC_Query());
+    auto copyTo = std::make_unique<CopyTo>(std::move(filePath), std::move(regularQuery));
+    if (ctx.iC_Options()) {
+        copyTo->setParsingOption(transformOptions(*ctx.iC_Options()));
+    }
+    return copyTo;
+}
+
+std::unique_ptr<Statement> Transformer::transformCopyFrom(CypherParser::IC_CopyFromContext& ctx) {
+    auto source = transformScanSource(*ctx.iC_ScanSource());
+    auto tableName = transformSchemaName(*ctx.oC_SchemaName());
+    auto copyFrom = std::make_unique<CopyFrom>(std::move(source), std::move(tableName));
+    CopyFromColumnInfo info;
+    info.inputColumnOrder = ctx.iC_ColumnNames();
+    if (ctx.iC_ColumnNames()) {
+        info.columnNames = transformColumnNames(*ctx.iC_ColumnNames());
+    }
+    if (ctx.iC_Options()) {
+        copyFrom->setParsingOption(transformOptions(*ctx.iC_Options()));
+    }
+    copyFrom->setColumnInfo(std::move(info));
+    return copyFrom;
+}
+
+std::unique_ptr<Statement> Transformer::transformCopyFromByColumn(
+    CypherParser::IC_CopyFromByColumnContext& ctx) {
+    auto source = std::make_unique<FileScanSource>(transformFilePaths(ctx.StringLiteral()));
+    auto tableName = transformSchemaName(*ctx.oC_SchemaName());
+    auto copyFrom = std::make_unique<CopyFrom>(std::move(source), std::move(tableName));
+    copyFrom->setByColumn();
+    return copyFrom;
+}
+
+std::vector<std::string> Transformer::transformColumnNames(
+    CypherParser::IC_ColumnNamesContext& ctx) {
+    std::vector<std::string> columnNames;
+    for (auto& schemaName : ctx.oC_SchemaName()) {
+        columnNames.push_back(transformSchemaName(*schemaName));
+    }
+    return columnNames;
+}
+
+std::vector<std::string> Transformer::transformFilePaths(
+    const std::vector<antlr4::tree::TerminalNode*>& stringLiteral) {
+    std::vector<std::string> csvFiles;
+    csvFiles.reserve(stringLiteral.size());
+    for (auto& csvFile : stringLiteral) {
+        csvFiles.push_back(transformStringLiteral(*csvFile));
+    }
+    return csvFiles;
+}
+
+std::unique_ptr<BaseScanSource> Transformer::transformScanSource(
+    CypherParser::IC_ScanSourceContext& ctx) {
+    if (ctx.iC_FilePaths()) {
+        auto filePaths = transformFilePaths(ctx.iC_FilePaths()->StringLiteral());
+        return std::make_unique<FileScanSource>(std::move(filePaths));
+    } else if (ctx.oC_Query()) {
+        auto query = transformQuery(*ctx.oC_Query());
+        return std::make_unique<QueryScanSource>(std::move(query));
+    } else if (ctx.oC_Variable()) {
+        std::vector<std::string> objectNames;
+        objectNames.push_back(transformVariable(*ctx.oC_Variable()));
+        if (ctx.oC_SchemaName()) {
+            objectNames.push_back(transformSchemaName(*ctx.oC_SchemaName()));
+        }
+        return std::make_unique<ObjectScanSource>(std::move(objectNames));
+    } else if (ctx.oC_FunctionInvocation()) {
+        auto functionExpression = transformFunctionInvocation(*ctx.oC_FunctionInvocation());
+        return std::make_unique<TableFuncScanSource>(std::move(functionExpression));
+    } else if (ctx.oC_Parameter()) {
+        auto paramExpression = transformParameterExpression(*ctx.oC_Parameter());
+        return std::make_unique<ParameterScanSource>(std::move(paramExpression));
+    }
+    UNREACHABLE_CODE;
+}
+
+options_t Transformer::transformOptions(CypherParser::IC_OptionsContext& ctx) {
+    options_t options;
+    for (auto loadOption : ctx.iC_Option()) {
+        auto optionName = transformSymbolicName(*loadOption->oC_SymbolicName());
+        // Check if the literal exists, otherwise set the value to true by default
+        if (loadOption->oC_Literal()) {
+            // If there is a literal, transform it and use it as the value
+            std::string valueStr = loadOption->oC_Literal()->getText();
+            StringUtils::toUpper(valueStr);
+            if (loadOption->iC_OptionQualifier()) {
+                auto qualifier =
+                    transformSymbolicName(*loadOption->iC_OptionQualifier()->oC_SymbolicName());
+                auto upperOptionName = optionName;
+                StringUtils::toUpper(upperOptionName);
+                StringUtils::toUpper(qualifier);
+                // Only `IGNORE_ERRORS=true (DUPLICATE_PK_ONLY)` is supported: rewrite it into the
+                // internal SKIP_DUPLICATE_PK option so the existing duplicate-PK skip path kicks
+                // in. Any other option/value/qualifier combination is rejected here.
+                if (upperOptionName != CopyConstants::IGNORE_ERRORS_OPTION_NAME ||
+                    qualifier != CopyConstants::DUPLICATE_PK_ONLY_QUALIFIER_NAME) {
+                    throw common::BinderException(
+                        std::format("Option qualifier ({}) is only supported as "
+                                    "IGNORE_ERRORS=true (DUPLICATE_PK_ONLY).",
+                            qualifier));
+                }
+                if (valueStr != "TRUE" && valueStr != "1") {
+                    throw common::BinderException(
+                        "IGNORE_ERRORS option qualifier "
+                        "(DUPLICATE_PK_ONLY) is only supported with IGNORE_ERRORS=true.");
+                }
+                options.emplace(CopyConstants::SKIP_DUPLICATE_PK_OPTION_NAME,
+                    std::make_unique<ParsedLiteralExpression>(Value(true), "true"));
+            } else {
+                options.emplace(optionName, transformLiteral(*loadOption->oC_Literal()));
+            }
+        } else {
+            // If no literal is provided, set the default value to true
+            options.emplace(optionName,
+                std::make_unique<ParsedLiteralExpression>(Value(true), "true"));
+        }
+    }
+    return options;
+}
+
+} // namespace parser
+} // namespace lbug

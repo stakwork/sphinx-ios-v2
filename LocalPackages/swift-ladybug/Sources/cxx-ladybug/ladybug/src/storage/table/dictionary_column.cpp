@@ -1,0 +1,316 @@
+#include "storage/table/dictionary_column.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <limits>
+
+#include "common/exception/storage.h"
+#include "common/types/string_t.h"
+#include "common/types/types.h"
+#include "common/vector/value_vector.h"
+#include "storage/buffer_manager/memory_manager.h"
+#include "storage/storage_utils.h"
+#include "storage/table/column_chunk_data.h"
+#include "storage/table/dictionary_chunk.h"
+#include "storage/table/string_chunk_data.h"
+#include "storage/table/string_column.h"
+#include <bit>
+
+using namespace lbug::common;
+using namespace lbug::transaction;
+
+namespace lbug {
+namespace storage {
+
+using string_index_t = DictionaryChunk::string_index_t;
+using string_offset_t = DictionaryChunk::string_offset_t;
+
+DictionaryColumn::DictionaryColumn(const std::string& name, FileHandle* dataFH, MemoryManager* mm,
+    ShadowFile* shadowFile, bool enableCompression) {
+    auto dataColName = StorageUtils::getColumnName(name, StorageUtils::ColumnType::DATA, "");
+    dataColumn = std::make_unique<Column>(dataColName, LogicalType::UINT8(), dataFH, mm, shadowFile,
+        false /*enableCompression*/, false /*requireNullColumn*/);
+    auto offsetColName = StorageUtils::getColumnName(name, StorageUtils::ColumnType::OFFSET, "");
+    offsetColumn = std::make_unique<Column>(offsetColName, LogicalType::UINT64(), dataFH, mm,
+        shadowFile, enableCompression, false /*requireNullColumn*/);
+}
+
+void DictionaryColumn::scan(const SegmentState& state, DictionaryChunk& dictChunk) const {
+    auto offsetChunk = dictChunk.getOffsetChunk();
+    auto stringDataChunk = dictChunk.getStringDataChunk();
+    auto initialDictSize = offsetChunk->getNumValues();
+    auto initialDictDataSize = stringDataChunk->getNumValues();
+
+    auto& dataMetadata =
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::DATA).metadata;
+    // Make sure that the chunk is large enough
+    if (stringDataChunk->getNumValues() + dataMetadata.numValues > stringDataChunk->getCapacity()) {
+        stringDataChunk->resize(
+            std::bit_ceil(stringDataChunk->getNumValues() + dataMetadata.numValues));
+    }
+    dataColumn->scanSegment(StringColumn::getChildState(state, StringColumn::ChildStateIndex::DATA),
+        stringDataChunk, 0,
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::DATA).metadata.numValues);
+
+    auto& offsetMetadata =
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::OFFSET).metadata;
+    // Make sure that the chunk is large enough
+    if (offsetChunk->getNumValues() + offsetMetadata.numValues > offsetChunk->getCapacity()) {
+        offsetChunk->resize(std::bit_ceil(offsetChunk->getNumValues() + offsetMetadata.numValues));
+    }
+    offsetColumn->scanSegment(
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::OFFSET), offsetChunk, 0,
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::OFFSET)
+            .metadata.numValues);
+    const auto numScannedOffsets = offsetMetadata.numValues;
+    auto* scannedOffsets = offsetChunk->getData<string_offset_t>() + initialDictSize;
+    validateOffsets(scannedOffsets, numScannedOffsets, dataMetadata.numValues,
+        true /* requireFirstOffsetZero */);
+    // Each offset needs to be incremented by the initial size of the dictionary data chunk
+    for (row_idx_t i = 0; i < numScannedOffsets; i++) {
+        if (scannedOffsets[i] > std::numeric_limits<string_offset_t>::max() - initialDictDataSize) {
+            throw StorageException("String dictionary offset overflows while being materialized.");
+        }
+        offsetChunk->setValue<string_offset_t>(scannedOffsets[i] + initialDictDataSize,
+            initialDictSize + i);
+    }
+}
+
+void DictionaryColumn::scan(const SegmentState& offsetState, const SegmentState& dataState,
+    std::vector<std::pair<string_index_t, uint64_t>>& offsetsToScan, ValueVector* result,
+    const ColumnChunkMetadata& indexMeta) const {
+    string_index_t firstOffsetToScan = 0, lastOffsetToScan = 0;
+    auto comp = [](auto pair1, auto pair2) { return pair1.first < pair2.first; };
+    auto duplicationFactor = (double)offsetState.metadata.numValues / indexMeta.numValues;
+    if (duplicationFactor <= 0.5) {
+        // If at least 50% of strings are duplicated, sort the offsets so we can re-use scanned
+        // strings.
+        std::sort(offsetsToScan.begin(), offsetsToScan.end(), comp);
+        firstOffsetToScan = offsetsToScan.front().first;
+        lastOffsetToScan = offsetsToScan.back().first;
+    } else {
+        const auto& [min, max] =
+            std::minmax_element(offsetsToScan.begin(), offsetsToScan.end(), comp);
+        firstOffsetToScan = min->first;
+        lastOffsetToScan = max->first;
+    }
+    // TODO(bmwinger): scan batches of adjacent values.
+    // Ideally we scan values together until we reach empty pages
+    // This would also let us use the same optimization for the data column,
+    // where the worst case for the current method is much worse
+
+    // Note that the list will contain duplicates when indices are duplicated.
+    // Each distinct value is scanned once, and re-used when writing to each output value
+    auto numOffsetsToScan = lastOffsetToScan - firstOffsetToScan + 1;
+    // One extra offset to scan for the end offset of the last string
+    std::vector<string_offset_t> offsets(numOffsetsToScan + 1);
+    scanOffsets(offsetState, offsets.data(), firstOffsetToScan, numOffsetsToScan,
+        dataState.metadata.numValues);
+
+    for (auto pos = 0u; pos < offsetsToScan.size(); pos++) {
+        auto startOffset = offsets[offsetsToScan[pos].first - firstOffsetToScan];
+        auto endOffset = offsets[offsetsToScan[pos].first - firstOffsetToScan + 1];
+        if (startOffset > dataState.metadata.numValues || endOffset < startOffset ||
+            endOffset > dataState.metadata.numValues) [[unlikely]] {
+            throw StorageException(
+                "String dictionary contains a non-monotonic or out-of-range string offset.");
+        }
+        auto lengthToScan = endOffset - startOffset;
+        scanValue(dataState, startOffset, lengthToScan, result, offsetsToScan[pos].second);
+        // For each string which has the same index in the dictionary as the one we scanned,
+        // copy the scanned string to its position in the result vector.
+        auto& scannedString = result->getValue<string_t>(offsetsToScan[pos].second);
+        while (pos + 1 < offsetsToScan.size() &&
+               offsetsToScan[pos + 1].first == offsetsToScan[pos].first) {
+            pos++;
+            result->setValue<string_t>(offsetsToScan[pos].second, scannedString);
+        }
+    }
+}
+
+std::vector<std::pair<string_index_t, string_index_t>>
+DictionaryColumn::materializeToStringChunkDictionary(const SegmentState& offsetState,
+    const SegmentState& dataState, std::vector<string_index_t>& indexesToScan,
+    StringChunkData& result, const ColumnChunkMetadata& indexMeta) const {
+    if (indexesToScan.empty()) {
+        return {};
+    }
+
+    string_index_t firstOffsetToScan = 0, lastOffsetToScan = 0;
+    auto comp = [](auto index1, auto index2) { return index1 < index2; };
+    auto duplicationFactor = (double)offsetState.metadata.numValues / indexMeta.numValues;
+    if (duplicationFactor <= 0.5) {
+        std::sort(indexesToScan.begin(), indexesToScan.end(), comp);
+        firstOffsetToScan = indexesToScan.front();
+        lastOffsetToScan = indexesToScan.back();
+    } else {
+        const auto& [min, max] =
+            std::minmax_element(indexesToScan.begin(), indexesToScan.end(), comp);
+        firstOffsetToScan = *min;
+        lastOffsetToScan = *max;
+    }
+
+    auto numOffsetsToScan = lastOffsetToScan - firstOffsetToScan + 1;
+    std::vector<string_offset_t> offsets(numOffsetsToScan + 1);
+    scanOffsets(offsetState, offsets.data(), firstOffsetToScan, numOffsetsToScan,
+        dataState.metadata.numValues);
+
+    std::vector<std::pair<string_index_t, string_index_t>> mapping;
+    mapping.reserve(indexesToScan.size());
+    for (const auto indexToScan : indexesToScan) {
+        auto startOffset = offsets[indexToScan - firstOffsetToScan];
+        auto endOffset = offsets[indexToScan - firstOffsetToScan + 1];
+        if (startOffset > dataState.metadata.numValues || endOffset < startOffset ||
+            endOffset > dataState.metadata.numValues) [[unlikely]] {
+            throw StorageException(
+                "String dictionary contains a non-monotonic or out-of-range string offset.");
+        }
+        auto lengthToScan = endOffset - startOffset;
+        auto newIndex =
+            appendScannedValueToDictionary(dataState, startOffset, lengthToScan, result);
+        mapping.emplace_back(indexToScan, newIndex);
+    }
+    return mapping;
+}
+
+string_index_t DictionaryColumn::append(const DictionaryChunk& dictChunk, SegmentState& state,
+    std::string_view val) const {
+    const auto startOffset = dataColumn->appendValues(*dictChunk.getStringDataChunk(),
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::DATA),
+        reinterpret_cast<const uint8_t*>(val.data()), nullptr /*nullChunkData*/, val.size());
+    return offsetColumn->appendValues(*dictChunk.getOffsetChunk(),
+        StringColumn::getChildState(state, StringColumn::ChildStateIndex::OFFSET),
+        reinterpret_cast<const uint8_t*>(&startOffset), nullptr /*nullChunkData*/, 1 /*numValues*/);
+}
+
+void DictionaryColumn::scanOffsets(const SegmentState& state,
+    DictionaryChunk::string_offset_t* offsets, uint64_t index, uint64_t numValues,
+    uint64_t dataSize) const {
+    if (numValues == 0) {
+        return;
+    }
+    if (index >= state.metadata.numValues || numValues > state.metadata.numValues - index)
+        [[unlikely]] {
+        throw StorageException("String dictionary index is outside the offset table.");
+    }
+    // We either need to read the next value, or store the maximum string offset at the end.
+    // Otherwise we won't know what the length of the last string is.
+    if (index + numValues < state.metadata.numValues) {
+        offsetColumn->scanSegment(state, index, numValues + 1, (uint8_t*)offsets);
+    } else {
+        offsetColumn->scanSegment(state, index, numValues, (uint8_t*)offsets);
+        offsets[numValues] = dataSize;
+    }
+    validateOffsets(offsets, numValues + 1, dataSize, false /* requireFirstOffsetZero */);
+}
+
+void DictionaryColumn::validateOffsets(const string_offset_t* offsets, uint64_t numValues,
+    uint64_t dataSize, bool requireFirstOffsetZero) {
+    if (numValues == 0) {
+        return;
+    }
+    if ((requireFirstOffsetZero && offsets[0] != 0) || offsets[0] > dataSize) [[unlikely]] {
+        throw StorageException("String dictionary has an invalid first offset.");
+    }
+    for (uint64_t i = 1; i < numValues; ++i) {
+        if (offsets[i] < offsets[i - 1] || offsets[i] > dataSize) [[unlikely]] {
+            throw StorageException(
+                "String dictionary contains a non-monotonic or out-of-range string offset.");
+        }
+    }
+}
+
+void DictionaryColumn::scanValue(const SegmentState& dataState, uint64_t startOffset,
+    uint64_t length, ValueVector* resultVector, uint64_t offsetInVector) const {
+    // Add string to vector first and read directly into the vector
+    auto& str = StringVector::reserveString(resultVector, offsetInVector, length);
+    dataColumn->scanSegment(dataState, startOffset, length, (uint8_t*)str.getData());
+    // Update prefix to match the scanned string data
+    if (!string_t::isShortString(str.len)) {
+        memcpy(str.prefix, str.getData(), string_t::PREFIX_LENGTH);
+    }
+}
+
+string_index_t DictionaryColumn::appendScannedValueToDictionary(const SegmentState& dataState,
+    uint64_t startOffset, uint64_t length, StringChunkData& result) const {
+    auto& stringDataChunk = *result.getDictionaryChunk().getStringDataChunk();
+    auto& offsetChunk = *result.getDictionaryChunk().getOffsetChunk();
+    if (stringDataChunk.getCapacity() < stringDataChunk.getNumValues() + length) {
+        stringDataChunk.resize(std::bit_ceil(stringDataChunk.getNumValues() + length));
+    }
+    if (offsetChunk.getNumValues() == offsetChunk.getCapacity()) {
+        offsetChunk.resize(std::bit_ceil(offsetChunk.getNumValues() + 1));
+    }
+    const auto newIndex = static_cast<string_index_t>(offsetChunk.getNumValues());
+    if (length > 0) {
+        dataColumn->scanSegment(dataState, startOffset, length,
+            stringDataChunk.getData<uint8_t>() + stringDataChunk.getNumValues());
+    }
+    offsetChunk.setValue<string_offset_t>(stringDataChunk.getNumValues(), newIndex);
+    stringDataChunk.setNumValues(stringDataChunk.getNumValues() + length);
+    return newIndex;
+}
+
+bool DictionaryColumn::canCommitInPlace(const SegmentState& state, uint64_t numNewStrings,
+    uint64_t totalStringLengthToAdd) const {
+    if (!canDataCommitInPlace(
+            StringColumn::getChildState(state, StringColumn::ChildStateIndex::DATA),
+            totalStringLengthToAdd)) {
+        return false;
+    }
+    if (!canOffsetCommitInPlace(
+            StringColumn::getChildState(state, StringColumn::ChildStateIndex::OFFSET),
+            StringColumn::getChildState(state, StringColumn::ChildStateIndex::DATA), numNewStrings,
+            totalStringLengthToAdd)) {
+        return false;
+    }
+    return true;
+}
+
+bool DictionaryColumn::canDataCommitInPlace(const SegmentState& dataState,
+    uint64_t totalStringLengthToAdd) {
+    // Make sure there is sufficient space in the data chunk (not currently compressed)
+    auto totalStringDataAfterUpdate = dataState.metadata.numValues + totalStringLengthToAdd;
+    if (totalStringDataAfterUpdate > dataState.metadata.getNumPages() * LBUG_PAGE_SIZE) {
+        // Data cannot be updated in place
+        return false;
+    }
+    return true;
+}
+
+bool DictionaryColumn::canOffsetCommitInPlace(const SegmentState& offsetState,
+    const SegmentState& dataState, uint64_t numNewStrings, uint64_t totalStringLengthToAdd) const {
+    auto totalStringOffsetsAfterUpdate = dataState.metadata.numValues + totalStringLengthToAdd;
+    auto offsetCapacity =
+        offsetState.metadata.compMeta.numValues(LBUG_PAGE_SIZE, offsetColumn->getDataType()) *
+        offsetState.metadata.getNumPages();
+    auto numStringsAfterUpdate = offsetState.metadata.numValues + numNewStrings;
+    if (numStringsAfterUpdate > offsetCapacity) {
+        // Offsets cannot be updated in place
+        return false;
+    }
+    // Indices are limited to 32 bits but in theory could be larger than that since the offset
+    // column can grow beyond the node group size.
+    //
+    // E.g. one big string is written first, followed by NODE_GROUP_SIZE-1 small strings,
+    // which are all updated in-place many times (which may fit if the first string is large
+    // enough that 2^n minus the first string's size is large enough to fit the other strings,
+    // for some n.
+    // 32 bits should give plenty of space for updates.
+    if (numStringsAfterUpdate > std::numeric_limits<string_index_t>::max()) [[unlikely]] {
+        return false;
+    }
+    if (offsetState.metadata.compMeta.canAlwaysUpdateInPlace()) {
+        return true;
+    }
+    InPlaceUpdateLocalState localUpdateState{};
+    if (!offsetState.metadata.compMeta.canUpdateInPlace(
+            (const uint8_t*)&totalStringOffsetsAfterUpdate, 0 /*offset*/, 1 /*numValues*/,
+            offsetColumn->getDataType().getPhysicalType(), localUpdateState)) {
+        return false;
+    }
+    return true;
+}
+
+} // namespace storage
+} // namespace lbug

@@ -1,0 +1,830 @@
+#include "catalog/catalog.h"
+
+#include "binder/ddl/bound_alter_info.h"
+#include "binder/ddl/bound_create_sequence_info.h"
+#include "binder/ddl/bound_create_table_info.h"
+#include "catalog/catalog_entry/function_catalog_entry.h"
+#include "catalog/catalog_entry/index_catalog_entry.h"
+#include "catalog/catalog_entry/node_table_catalog_entry.h"
+#include "catalog/catalog_entry/rel_group_catalog_entry.h"
+#include "catalog/catalog_entry/scalar_macro_catalog_entry.h"
+#include "catalog/catalog_entry/sequence_catalog_entry.h"
+#include "catalog/catalog_entry/type_catalog_entry.h"
+#include "common/exception/catalog.h"
+#include "common/exception/runtime.h"
+#include "common/partition_routing_hook.h"
+#include "common/serializer/deserializer.h"
+#include "common/serializer/serializer.h"
+#include "extension/extension_manager.h"
+#include "function/function_collection.h"
+#include "main/client_context.h"
+#include "main/database_manager.h"
+#include "transaction/transaction.h"
+#include <format>
+
+using namespace lbug::binder;
+using namespace lbug::common;
+using namespace lbug::storage;
+using namespace lbug::transaction;
+
+namespace lbug {
+namespace catalog {
+
+namespace {
+
+// Notify the routing wrapper (if any) that a partition subgraph entry now exists
+// or is about to be dropped, so it can provision/decommission the remote copy.
+// Creation notifications fire for every partition regardless of placement - this is
+// how a wrapper learns about newly provisioned partitions and decides where they
+// live; later locate() calls are answered from the wrapper's own records.
+void notifyPartitionCreated(common::table_id_t parentTableID, uint64_t partitionIndex) {
+    const auto* hooks = common::getPartitionRoutingHooks();
+    if (hooks == nullptr || hooks->onPartitionCreate == nullptr) {
+        return;
+    }
+    common::PartitionHandle handle = nullptr;
+    if (hooks->locate != nullptr) {
+        hooks->locate(hooks->context, common::PartitionRef{parentTableID, partitionIndex}, &handle);
+    }
+    hooks->onPartitionCreate(hooks->context, common::PartitionRef{parentTableID, partitionIndex},
+        handle);
+}
+
+void notifyPartitionDropped(common::table_id_t parentTableID, uint64_t partitionIndex) {
+    const auto* hooks = common::getPartitionRoutingHooks();
+    if (hooks == nullptr || hooks->onPartitionDrop == nullptr) {
+        return;
+    }
+    common::PartitionHandle handle = nullptr;
+    if (hooks->locate != nullptr &&
+        hooks->locate(hooks->context, common::PartitionRef{parentTableID, partitionIndex},
+            &handle)) {
+        hooks->onPartitionDrop(hooks->context, common::PartitionRef{parentTableID, partitionIndex},
+            handle);
+    }
+}
+
+} // namespace
+
+Catalog::Catalog() : version{0} {
+    initCatalogSets();
+    registerBuiltInFunctions();
+    registerBuiltInTypes();
+}
+
+Catalog* Catalog::Get(const main::ClientContext& context) {
+    if (context.getAttachedDatabase()) {
+        return context.getAttachedDatabase()->getCatalog();
+    }
+    auto dbManager = main::DatabaseManager::Get(context);
+    if (dbManager->hasDefaultGraph()) {
+        auto graphCatalog = dbManager->getDefaultGraphCatalog();
+        if (graphCatalog != nullptr) {
+            return graphCatalog;
+        }
+    }
+    return context.getDatabase()->getCatalog();
+}
+
+void Catalog::initCatalogSets() {
+    tables = std::make_unique<CatalogSet>();
+    sequences = std::make_unique<CatalogSet>();
+    functions = std::make_unique<CatalogSet>();
+    types = std::make_unique<CatalogSet>();
+    indexes = std::make_unique<CatalogSet>();
+    macros = std::make_unique<CatalogSet>();
+    internalTables = std::make_unique<CatalogSet>(true /* isInternal */);
+    internalSequences = std::make_unique<CatalogSet>(true /* isInternal */);
+    internalFunctions = std::make_unique<CatalogSet>(true /* isInternal */);
+    graphs = std::make_unique<CatalogSet>();
+}
+
+bool Catalog::containsTable(const Transaction* transaction, const std::string& tableName,
+    bool useInternal) const {
+    if (tables->containsEntry(transaction, tableName)) {
+        return true;
+    }
+    if (useInternal) {
+        return internalTables->containsEntry(transaction, tableName);
+    }
+    return false;
+}
+
+bool Catalog::containsTable(const Transaction* transaction, table_id_t tableID,
+    bool useInternal) const {
+    if (tables->getEntryOfOID(transaction, tableID) != nullptr) {
+        return true;
+    }
+    if (useInternal) {
+        return internalTables->getEntryOfOID(transaction, tableID) != nullptr;
+    }
+    return false;
+}
+
+TableCatalogEntry* Catalog::getTableCatalogEntry(const Transaction* transaction,
+    table_id_t tableID) const {
+    auto result = tables->getEntryOfOID(transaction, tableID);
+    if (result == nullptr) {
+        result = internalTables->getEntryOfOID(transaction, tableID);
+    }
+    // LCOV_EXCL_START
+    if (result == nullptr) {
+        throw RuntimeException(
+            std::format("Cannot find table catalog entry with id {}.", std::to_string(tableID)));
+    }
+    // LCOV_EXCL_STOP
+    return result->ptrCast<TableCatalogEntry>();
+}
+
+TableCatalogEntry* Catalog::getTableCatalogEntry(const Transaction* transaction,
+    const std::string& tableName, bool useInternal) const {
+    CatalogEntry* result = nullptr;
+    if (!tables->containsEntry(transaction, tableName)) {
+        if (!useInternal) {
+            throw CatalogException(std::format("{} does not exist in catalog.", tableName));
+        } else {
+            result = internalTables->getEntry(transaction, tableName);
+        }
+    } else {
+        result = tables->getEntry(transaction, tableName);
+    }
+    // LCOV_EXCL_STOP
+    return result->ptrCast<TableCatalogEntry>();
+}
+
+template<TableCatalogEntryType T>
+std::vector<T*> Catalog::getTableEntries(const Transaction* transaction, bool useInternal,
+    CatalogEntryType entryType) const {
+    std::vector<T*> result;
+    for (auto& [_, entry] : tables->getEntries(transaction)) {
+        if (entry->getType() != entryType) {
+            continue;
+        }
+        result.push_back(entry->template ptrCast<T>());
+    }
+    if (useInternal) {
+        for (auto& [_, entry] : internalTables->getEntries(transaction)) {
+            if (entry->getType() != entryType) {
+                continue;
+            }
+            result.push_back(entry->template ptrCast<T>());
+        }
+    }
+    return result;
+}
+
+std::vector<NodeTableCatalogEntry*> Catalog::getNodeTableEntries(const Transaction* transaction,
+    bool useInternal) const {
+    return getTableEntries<NodeTableCatalogEntry>(transaction, useInternal,
+        CatalogEntryType::NODE_TABLE_ENTRY);
+}
+
+std::vector<RelGroupCatalogEntry*> Catalog::getRelGroupEntries(const Transaction* transaction,
+    bool useInternal) const {
+    return getTableEntries<RelGroupCatalogEntry>(transaction, useInternal,
+        CatalogEntryType::REL_GROUP_ENTRY);
+}
+
+std::vector<TableCatalogEntry*> Catalog::getTableEntries(const Transaction* transaction,
+    bool useInternal) const {
+    std::vector<TableCatalogEntry*> result;
+    for (auto& [_, entry] : tables->getEntries(transaction)) {
+        result.push_back(entry->ptrCast<TableCatalogEntry>());
+    }
+    if (useInternal) {
+        for (auto& [_, entry] : internalTables->getEntries(transaction)) {
+            result.push_back(entry->ptrCast<TableCatalogEntry>());
+        }
+    }
+    return result;
+}
+
+void Catalog::dropTableEntryAndIndex(Transaction* transaction, const std::string& name) {
+    auto tableID = getTableCatalogEntry(transaction, name)->getTableID();
+    dropAllIndexes(transaction, tableID);
+    dropTableEntry(transaction, tableID);
+}
+
+void Catalog::dropTableEntry(Transaction* transaction, table_id_t tableID) {
+    dropTableEntry(transaction, getTableCatalogEntry(transaction, tableID));
+}
+
+void Catalog::dropTableEntry(Transaction* transaction, const TableCatalogEntry* entry) {
+    dropSerialSequence(transaction, entry);
+    if (auto* nodeEntry = dynamic_cast<const NodeTableCatalogEntry*>(entry);
+        nodeEntry != nullptr && nodeEntry->isPartitioned()) {
+        // Dropping a partitioned parent drops all of its partition subgraph node tables.
+        // Children may already have been dropped individually by the caller; skip those.
+        for (auto childID : nodeEntry->getChildTableIDs()) {
+            if (!containsTable(transaction, childID)) {
+                continue;
+            }
+            auto* child = getTableCatalogEntry(transaction, childID);
+            dropAllIndexes(transaction, childID);
+            dropSerialSequence(transaction, child);
+            notifyPartitionDropped(nodeEntry->getTableID(),
+                child->ptrCast<NodeTableCatalogEntry>()->getPartitionIndex());
+            if (tables->containsEntry(transaction, child->getName())) {
+                tables->dropEntry(transaction, child->getName(), child->getOID());
+            } else {
+                internalTables->dropEntry(transaction, child->getName(), child->getOID());
+            }
+            dropNodeTableSubgraph(transaction, child->getName());
+        }
+    }
+    if (tables->containsEntry(transaction, entry->getName())) {
+        tables->dropEntry(transaction, entry->getName(), entry->getOID());
+    } else {
+        internalTables->dropEntry(transaction, entry->getName(), entry->getOID());
+    }
+    dropNodeTableSubgraph(transaction, entry->getName());
+}
+void Catalog::dropMacroEntry(Transaction* transaction, const lbug::common::oid_t macroID) {
+    dropMacroEntry(transaction, getScalarMacroCatalogEntry(transaction, macroID));
+}
+
+void Catalog::dropMacroEntry(Transaction* transaction, const ScalarMacroCatalogEntry* entry) {
+    macros->dropEntry(transaction, entry->getName(), entry->getOID());
+}
+
+void Catalog::alterTableEntry(Transaction* transaction, const BoundAlterInfo& info) {
+    // Capture whether the renamed entry is a node table before the rename clears its name.
+    const auto isNodeTable = tables->containsEntry(transaction, info.tableName) &&
+                             tables->getEntry(transaction, info.tableName)->getType() ==
+                                 CatalogEntryType::NODE_TABLE_ENTRY;
+    tables->alterTableEntry(transaction, info);
+    if (isNodeTable && info.alterType == AlterType::RENAME) {
+        // Keep the subgraph name in sync with the table name.
+        const auto& renameInfo = info.extraInfo->constPtrCast<BoundExtraRenameTableInfo>();
+        dropNodeTableSubgraph(transaction, info.tableName);
+        createNodeTableSubgraph(transaction, renameInfo->newName);
+        // Partition subgraphs are named <parent>_p<i>; keep them in step with the parent so the
+        // naming invariant survives a rename. Children follow their parent's ID-based links, so
+        // this is cosmetic consistency rather than correctness.
+        auto* renamedEntry = getTableCatalogEntry(transaction, renameInfo->newName);
+        if (renamedEntry->getType() == CatalogEntryType::NODE_TABLE_ENTRY) {
+            auto* nodeEntry = renamedEntry->ptrCast<NodeTableCatalogEntry>();
+            for (auto childID : nodeEntry->getChildTableIDs()) {
+                auto* child =
+                    getTableCatalogEntry(transaction, childID)->ptrCast<NodeTableCatalogEntry>();
+                const auto oldChildName = child->getName();
+                auto childRenameInfo = BoundAlterInfo(AlterType::RENAME, oldChildName,
+                    std::make_unique<BoundExtraRenameTableInfo>(
+                        std::format("{}_p{}", renameInfo->newName, child->getPartitionIndex())),
+                    ConflictAction::ON_CONFLICT_THROW);
+                tables->alterTableEntry(transaction, childRenameInfo,
+                    true /* skipLoggingToWAL: implied by the parent's rename record; replaying
+                            that record re-runs this loop */);
+                dropNodeTableSubgraph(transaction, oldChildName);
+                createNodeTableSubgraph(transaction,
+                    childRenameInfo.extraInfo->constPtrCast<BoundExtraRenameTableInfo>()->newName);
+            }
+        }
+    }
+}
+
+void Catalog::addTableEntry(std::unique_ptr<TableCatalogEntry> entry) {
+    tables->createEntry(&transaction::DUMMY_TRANSACTION, std::move(entry));
+}
+
+CatalogEntry* Catalog::createRelGroupEntry(Transaction* transaction,
+    const BoundCreateTableInfo& info) {
+    const auto extraInfo = info.extraInfo->ptrCast<BoundExtraCreateRelTableGroupInfo>();
+    std::vector<RelTableCatalogInfo> relTableInfos;
+    DASSERT(extraInfo->relTableInfos.size() > 0);
+    for (auto& relTableInfo : extraInfo->relTableInfos) {
+        relTableInfos.emplace_back(relTableInfo.nodePair, tables->getNextOID(),
+            relTableInfo.srcMultiplicity, relTableInfo.dstMultiplicity);
+    }
+    auto relGroupEntry =
+        std::make_unique<RelGroupCatalogEntry>(info.tableName, extraInfo->srcMultiplicity,
+            extraInfo->dstMultiplicity, extraInfo->storageDirection, std::move(relTableInfos),
+            extraInfo->storage, extraInfo->storageFormat, extraInfo->scanFunction,
+            std::move(extraInfo->scanBindData), extraInfo->foreignDatabaseName);
+    for (auto& definition : extraInfo->propertyDefinitions) {
+        relGroupEntry->addProperty(definition);
+    }
+    DASSERT(info.hasParent == false);
+    relGroupEntry->setHasParent(info.hasParent);
+    createSerialSequence(transaction, relGroupEntry.get(), info.isInternal);
+    auto catalogSet = info.isInternal ? internalTables.get() : tables.get();
+    catalogSet->createEntry(transaction, std::move(relGroupEntry));
+    return catalogSet->getEntry(transaction, info.tableName);
+}
+
+bool Catalog::containsSequence(const Transaction* transaction, const std::string& name) const {
+    return sequences->containsEntry(transaction, name);
+}
+
+SequenceCatalogEntry* Catalog::getSequenceEntry(const Transaction* transaction,
+    const std::string& sequenceName, bool useInternalSeq) const {
+    CatalogEntry* entry = nullptr;
+    if (!sequences->containsEntry(transaction, sequenceName) && useInternalSeq) {
+        entry = internalSequences->getEntry(transaction, sequenceName);
+    } else {
+        entry = sequences->getEntry(transaction, sequenceName);
+    }
+    DASSERT(entry);
+    return entry->ptrCast<SequenceCatalogEntry>();
+}
+
+SequenceCatalogEntry* Catalog::getSequenceEntry(const Transaction* transaction,
+    sequence_id_t sequenceID) const {
+    auto entry = internalSequences->getEntryOfOID(transaction, sequenceID);
+    if (entry == nullptr) {
+        entry = sequences->getEntryOfOID(transaction, sequenceID);
+    }
+    DASSERT(entry);
+    return entry->ptrCast<SequenceCatalogEntry>();
+}
+
+std::vector<SequenceCatalogEntry*> Catalog::getSequenceEntries(
+    const Transaction* transaction) const {
+    std::vector<SequenceCatalogEntry*> result;
+    for (auto& [_, entry] : sequences->getEntries(transaction)) {
+        result.push_back(entry->ptrCast<SequenceCatalogEntry>());
+    }
+    return result;
+}
+
+sequence_id_t Catalog::createSequence(Transaction* transaction,
+    const BoundCreateSequenceInfo& info) {
+    auto entry = std::make_unique<SequenceCatalogEntry>(info);
+    entry->setHasParent(info.hasParent);
+    if (info.isInternal) {
+        return internalSequences->createEntry(transaction, std::move(entry));
+    } else {
+        return sequences->createEntry(transaction, std::move(entry));
+    }
+}
+
+void Catalog::dropSequence(Transaction* transaction, const std::string& name) {
+    const auto entry = getSequenceEntry(transaction, name);
+    dropSequence(transaction, entry->getOID());
+}
+
+void Catalog::dropSequence(Transaction* transaction, sequence_id_t sequenceID) {
+    const auto sequenceEntry = getSequenceEntry(transaction, sequenceID);
+    CatalogSet* set = nullptr;
+    set = sequences->containsEntry(transaction, sequenceEntry->getName()) ? sequences.get() :
+                                                                            internalSequences.get();
+    set->dropEntry(transaction, sequenceEntry->getName(), sequenceEntry->getOID());
+}
+
+void Catalog::createType(Transaction* transaction, std::string name, LogicalType type) {
+    if (types->containsEntry(transaction, name)) {
+        return;
+    }
+    auto entry = std::make_unique<TypeCatalogEntry>(std::move(name), std::move(type));
+    types->createEntry(transaction, std::move(entry));
+}
+
+static std::string getInstallExtensionMessage(std::string_view extensionName,
+    std::string_view entryType) {
+    return std::format("This {} exists in the {} "
+                       "extension. You can install and load the "
+                       "extension by running 'INSTALL {}; LOAD EXTENSION {};'.",
+        entryType, extensionName, extensionName, extensionName);
+}
+
+static std::string getTypeDoesNotExistMessage(std::string_view entryName) {
+    std::string message =
+        std::format("{} is neither an internal type nor a user defined type.", entryName);
+    const auto matchingExtensionFunction =
+        extension::ExtensionManager::lookupExtensionsByTypeName(entryName);
+    if (matchingExtensionFunction.has_value()) {
+        message = std::format("{} {}", message,
+            getInstallExtensionMessage(matchingExtensionFunction->extensionName, "type"));
+    }
+    return message;
+}
+
+LogicalType Catalog::getType(const Transaction* transaction, const std::string& name) const {
+    if (!types->containsEntry(transaction, name)) {
+        throw CatalogException{getTypeDoesNotExistMessage(name)};
+    }
+    return types->getEntry(transaction, name)
+        ->constCast<TypeCatalogEntry>()
+        .getLogicalType()
+        .copy();
+}
+
+bool Catalog::containsType(const Transaction* transaction, const std::string& typeName) const {
+    return types->containsEntry(transaction, typeName);
+}
+
+void Catalog::createIndex(Transaction* transaction, std::unique_ptr<CatalogEntry> indexCatalogEntry,
+    bool skipLoggingToWAL) {
+    DASSERT(indexCatalogEntry->getType() == CatalogEntryType::INDEX_ENTRY);
+    indexes->createEntry(transaction, std::move(indexCatalogEntry), skipLoggingToWAL);
+}
+
+IndexCatalogEntry* Catalog::getIndex(const Transaction* transaction, table_id_t tableID,
+    const std::string& indexName) const {
+    auto internalName = IndexCatalogEntry::getInternalIndexName(tableID, indexName);
+    return indexes->getEntry(transaction, internalName)->ptrCast<IndexCatalogEntry>();
+}
+
+std::vector<IndexCatalogEntry*> Catalog::getIndexEntries(const Transaction* transaction) const {
+    std::vector<IndexCatalogEntry*> result;
+    for (auto& [_, entry] : indexes->getEntries(transaction)) {
+        result.push_back(entry->ptrCast<IndexCatalogEntry>());
+    }
+    return result;
+}
+
+std::vector<IndexCatalogEntry*> Catalog::getIndexEntries(const Transaction* transaction,
+    table_id_t tableID) const {
+    std::vector<IndexCatalogEntry*> result;
+    for (auto& [_, entry] : indexes->getEntries(transaction)) {
+        auto indexEntry = entry->ptrCast<IndexCatalogEntry>();
+        if (indexEntry->getTableID() == tableID) {
+            result.push_back(indexEntry);
+        }
+    }
+    return result;
+}
+
+bool Catalog::containsIndex(const Transaction* transaction, table_id_t tableID,
+    const std::string& indexName) const {
+    return indexes->containsEntry(transaction,
+        IndexCatalogEntry::getInternalIndexName(tableID, indexName));
+}
+
+bool Catalog::containsIndex(const Transaction* transaction, table_id_t tableID,
+    property_id_t propertyID) const {
+    for (auto& [_, entry] : indexes->getEntries(transaction)) {
+        auto indexEntry = entry->ptrCast<IndexCatalogEntry>();
+        if (indexEntry->getTableID() != tableID) {
+            continue;
+        }
+        if (indexEntry->containsPropertyID(propertyID)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Catalog::containsUnloadedIndex(const Transaction* transaction, common::table_id_t tableID,
+    common::property_id_t propertyID) const {
+    for (auto& [_, entry] : indexes->getEntries(transaction)) {
+        auto indexEntry = entry->ptrCast<IndexCatalogEntry>();
+        if (indexEntry->getTableID() != tableID || !indexEntry->containsPropertyID(propertyID)) {
+            continue;
+        }
+        if (!indexEntry->isLoaded()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Catalog::dropAllIndexes(Transaction* transaction, table_id_t tableID) {
+    for (auto catalogEntry : indexes->getEntries(transaction)) {
+        auto& indexCatalogEntry = catalogEntry.second->constCast<IndexCatalogEntry>();
+        if (indexCatalogEntry.getTableID() == tableID) {
+            indexes->dropEntry(transaction, catalogEntry.first, catalogEntry.second->getOID());
+        }
+    }
+}
+
+void Catalog::dropIndex(Transaction* transaction, table_id_t tableID,
+    const std::string& indexName) const {
+    auto uniqueName = IndexCatalogEntry::getInternalIndexName(tableID, indexName);
+    const auto entry = indexes->getEntry(transaction, uniqueName);
+    indexes->dropEntry(transaction, uniqueName, entry->getOID());
+}
+
+void Catalog::dropIndex(Transaction* transaction, oid_t indexOID) {
+    const auto entry = indexes->getEntryOfOID(transaction, indexOID);
+    if (entry == nullptr) {
+        throw CatalogException{std::format("Index with OID {} does not exist.", indexOID)};
+    }
+    indexes->dropEntry(transaction, entry->getName(), indexOID);
+}
+
+bool Catalog::containsFunction(const Transaction* transaction, const std::string& name,
+    bool useInternal) const {
+    auto hasEntry = functions->containsEntry(transaction, name);
+    if (!hasEntry && useInternal) {
+        return internalFunctions->containsEntry(transaction, name);
+    }
+    return hasEntry;
+}
+
+void Catalog::addFunction(Transaction* transaction, CatalogEntryType entryType, std::string name,
+    function::function_set functionSet, bool isInternal) {
+    auto& catalogSet = isInternal ? internalFunctions : functions;
+    if (catalogSet->containsEntry(transaction, name)) {
+        throw CatalogException{std::format("function {} already exists.", name)};
+    }
+    catalogSet->createEntry(transaction,
+        std::make_unique<FunctionCatalogEntry>(entryType, std::move(name), std::move(functionSet)));
+}
+
+static std::string getFunctionDoesNotExistMessage(std::string_view entryName) {
+    std::string message = std::format("function {} does not exist.", entryName);
+    const auto matchingExtensionFunction =
+        extension::ExtensionManager::lookupExtensionsByFunctionName(entryName);
+    if (matchingExtensionFunction.has_value()) {
+        message = std::format("function {} is not defined. {}", entryName,
+            getInstallExtensionMessage(matchingExtensionFunction->extensionName, "function"));
+    }
+    return message;
+}
+
+void Catalog::dropFunction(Transaction* transaction, const std::string& name) {
+    if (!containsFunction(transaction, name)) {
+        throw CatalogException{std::format("function {} doesn't exist.", name)};
+    }
+    auto entry = getFunctionEntry(transaction, name);
+    functions->dropEntry(transaction, name, entry->getOID());
+}
+
+CatalogEntry* Catalog::getFunctionEntry(const Transaction* transaction, const std::string& name,
+    bool useInternal) const {
+    CatalogEntry* result = nullptr;
+    if (functions->containsEntry(transaction, name)) {
+        result = functions->getEntry(transaction, name);
+    } else if (macros->containsEntry(transaction, name)) {
+        result = macros->getEntry(transaction, name);
+    } else if (useInternal) {
+        result = internalFunctions->getEntry(transaction, name);
+    } else {
+        throw CatalogException(getFunctionDoesNotExistMessage(name));
+    }
+    return result;
+}
+
+std::vector<ScalarMacroCatalogEntry*> Catalog::getMacroEntries(
+    const Transaction* transaction) const {
+    std::vector<ScalarMacroCatalogEntry*> result;
+    for (auto& [_, entry] : macros->getEntries(transaction)) {
+        DASSERT(entry->getType() == CatalogEntryType::SCALAR_MACRO_ENTRY);
+        result.push_back(entry->ptrCast<ScalarMacroCatalogEntry>());
+    }
+    return result;
+}
+
+std::vector<FunctionCatalogEntry*> Catalog::getFunctionEntries(
+    const Transaction* transaction) const {
+    std::vector<FunctionCatalogEntry*> result;
+    for (auto& [_, entry] : functions->getEntries(transaction)) {
+        result.push_back(entry->ptrCast<FunctionCatalogEntry>());
+    }
+    return result;
+}
+
+bool Catalog::containsMacro(const Transaction* transaction, const std::string& macroName) const {
+    return macros->containsEntry(transaction, macroName);
+}
+
+function::ScalarMacroFunction* Catalog::getScalarMacroFunction(const Transaction* transaction,
+    const std::string& name) const {
+    return macros->getEntry(transaction, name)
+        ->constCast<ScalarMacroCatalogEntry>()
+        .getMacroFunction();
+}
+
+// addScalarMacroFunction
+void Catalog::addScalarMacroFunction(Transaction* transaction, std::string name,
+    std::unique_ptr<function::ScalarMacroFunction> macro) {
+    auto entry = std::make_unique<ScalarMacroCatalogEntry>(std::move(name), std::move(macro));
+    macros->createEntry(transaction, std::move(entry));
+}
+
+ScalarMacroCatalogEntry* Catalog::getScalarMacroCatalogEntry(const Transaction* transaction,
+    lbug::common::oid_t macroID) const {
+    auto result = functions->getEntryOfOID(transaction, macroID);
+    if (result == nullptr) {
+        throw RuntimeException(
+            std::format("Cannot find macro catalog entry with id {}.", std::to_string(macroID)));
+    }
+
+    return result->ptrCast<ScalarMacroCatalogEntry>();
+}
+
+std::vector<std::string> Catalog::getMacroNames(const Transaction* transaction) const {
+    std::vector<std::string> macroNames;
+    for (auto& [_, function] : macros->getEntries(transaction)) {
+        DASSERT(function->getType() == CatalogEntryType::SCALAR_MACRO_ENTRY);
+        macroNames.push_back(function->getName());
+    }
+    return macroNames;
+}
+
+void Catalog::dropMacro(Transaction* transaction, std::string& name) {
+    if (!containsMacro(transaction, name)) {
+        throw CatalogException{std::format("Macro {} doesn't exist.", name)};
+    }
+    auto entry = getFunctionEntry(transaction, name);
+    macros->dropEntry(transaction, name, entry->getOID());
+}
+
+void Catalog::registerBuiltInFunctions() {
+    auto functionCollection = function::FunctionCollection::getFunctions();
+    for (auto i = 0u; functionCollection[i].name != nullptr; ++i) {
+        auto& f = functionCollection[i];
+        auto functionSet = f.getFunctionSetFunc();
+        functions->createEntry(&DUMMY_TRANSACTION,
+            std::make_unique<FunctionCatalogEntry>(f.catalogEntryType, f.name,
+                std::move(functionSet)));
+    }
+}
+
+void Catalog::registerBuiltInTypes() {
+    types->createEntry(&DUMMY_TRANSACTION,
+        std::make_unique<TypeCatalogEntry>("JSON", common::LogicalType::JSON()));
+}
+
+CatalogEntry* Catalog::createTableEntry(Transaction* transaction,
+    const BoundCreateTableInfo& info) {
+    switch (info.type) {
+    case CatalogEntryType::NODE_TABLE_ENTRY: {
+        return createNodeTableEntry(transaction, info);
+    }
+    case CatalogEntryType::REL_GROUP_ENTRY: {
+        return createRelGroupEntry(transaction, info);
+    }
+    default:
+        UNREACHABLE_CODE;
+    }
+}
+
+void Catalog::createNodeTableSubgraph(Transaction* transaction, const std::string& tableName) {
+    // Skipped in WAL: the table's own create record implies the subgraph, and replay recreates it
+    // through createNodeTableEntry. The undo buffer still tracks it, so a rolled-back CREATE NODE
+    // TABLE also removes the subgraph.
+    graphs->createEntry(transaction, std::make_unique<GraphCatalogEntry>(tableName, false),
+        true /* skipLoggingToWAL */);
+}
+
+void Catalog::dropNodeTableSubgraph(Transaction* transaction, const std::string& tableName) {
+    if (graphs->containsEntry(transaction, tableName)) {
+        graphs->dropEntry(transaction, tableName,
+            graphs->getEntry(transaction, tableName)->getOID());
+    }
+}
+
+CatalogEntry* Catalog::createNodeTableEntry(Transaction* transaction,
+    const BoundCreateTableInfo& info) {
+    const auto extraInfo = info.extraInfo->constPtrCast<BoundExtraCreateNodeTableInfo>();
+    auto entry = std::make_unique<NodeTableCatalogEntry>(info.tableName, extraInfo->primaryKeyName,
+        extraInfo->storage, extraInfo->storageFormat);
+    for (auto& definition : extraInfo->propertyDefinitions) {
+        entry->addProperty(definition);
+    }
+    if (extraInfo->partitionParentTableID != common::INVALID_TABLE_ID) {
+        // Dynamically created LIST partition child: register the parent link so reads expand
+        // to it and writes can resolve it.
+        entry->setParentInfo(extraInfo->partitionParentTableID, extraInfo->partitionChildIndex);
+    }
+    entry->setHasParent(info.hasParent);
+    createSerialSequence(transaction, entry.get(), info.isInternal);
+    auto catalogSet = info.isInternal ? internalTables.get() : tables.get();
+    catalogSet->createEntry(transaction, std::move(entry));
+    auto* parentEntry = catalogSet->getEntry(transaction, info.tableName);
+    // A node table is itself a subgraph; register it so SHOW_GRAPHS lists it.
+    createNodeTableSubgraph(transaction, info.tableName);
+
+    // PostgreSQL-style partitioning: the logical parent owns the schema but no physical storage.
+    // Each partition is a separate node-table subgraph. Partitions are kept in the same public
+    // catalog set as the parent so they get normal (small) table IDs: several execution-storage
+    // structures index state by table ID, and internal entries carry OIDs near 2^63 which would
+    // otherwise blow those up.
+    if (extraInfo->partitionInfo.has_value()) {
+        auto* parent = parentEntry->ptrCast<NodeTableCatalogEntry>();
+        const auto& partitionInfo = *extraInfo->partitionInfo;
+        auto partitionColumnID = parent->getPropertyID(partitionInfo.columnName);
+        parent->setPartitionInfo(partitionInfo.method, partitionInfo.columnName, partitionColumnID,
+            partitionInfo.numPartitions);
+        // LIST starts with one partition and grows on demand; HASH creates its full set here.
+        // LIST's initial partition keeps the >=1-partition invariant that reads and writes rely
+        // on (partition expansion never yields an empty child set). It stays unkeyed and empty:
+        // rows always route to the partition created for their own key value.
+        const auto numInitialPartitions =
+            partitionInfo.method == binder::BoundPartitionMethod::LIST ?
+                1 :
+                partitionInfo.numPartitions;
+        for (auto i = 0u; i < numInitialPartitions; i++) {
+            auto childName = std::format("{}_p{}", info.tableName, i);
+            auto child = std::make_unique<NodeTableCatalogEntry>(childName,
+                extraInfo->primaryKeyName, extraInfo->storage, extraInfo->storageFormat);
+            for (auto& definition : extraInfo->propertyDefinitions) {
+                child->addProperty(definition.copy());
+            }
+            child->setHasParent(info.hasParent);
+            child->setParentInfo(parent->getTableID(), i);
+            createSerialSequence(transaction, child.get(), info.isInternal);
+            auto childOID = catalogSet->createEntry(transaction, std::move(child));
+            // Each partition subgraph is a node table and therefore its own subgraph.
+            createNodeTableSubgraph(transaction, childName);
+            parent->addChildTableID(childOID);
+            // Let the routing wrapper provision remote storage for this partition.
+            // Renames are not reported: PartitionRef is ID-based and IDs survive
+            // renames.
+            notifyPartitionCreated(parent->getTableID(), i);
+        }
+    }
+    return parentEntry;
+}
+
+void Catalog::createSerialSequence(Transaction* transaction, const TableCatalogEntry* entry,
+    bool isInternal) {
+    for (auto& definition : entry->getProperties()) {
+        if (definition.getType().getLogicalTypeID() != LogicalTypeID::SERIAL) {
+            continue;
+        }
+        const auto seqName =
+            SequenceCatalogEntry::getSerialName(entry->getName(), definition.getName());
+        auto seqInfo =
+            BoundCreateSequenceInfo(seqName, 0, 1, 0, std::numeric_limits<int64_t>::max(), false,
+                ConflictAction::ON_CONFLICT_THROW, isInternal);
+        seqInfo.hasParent = true;
+        createSequence(transaction, seqInfo);
+    }
+}
+
+void Catalog::dropSerialSequence(Transaction* transaction, const TableCatalogEntry* entry) {
+    for (auto& definition : entry->getProperties()) {
+        if (definition.getType().getLogicalTypeID() != LogicalTypeID::SERIAL) {
+            continue;
+        }
+        auto seqName = SequenceCatalogEntry::getSerialName(entry->getName(), definition.getName());
+        dropSequence(transaction, seqName);
+    }
+}
+
+bool Catalog::containsGraph(const Transaction* transaction, const std::string& graphName) const {
+    return graphs->containsEntry(transaction, graphName);
+}
+
+GraphCatalogEntry* Catalog::getGraphEntry(const Transaction* transaction,
+    const std::string& graphName) const {
+    auto entry = graphs->getEntry(transaction, graphName);
+    DASSERT(entry);
+    return entry->ptrCast<GraphCatalogEntry>();
+}
+
+std::vector<GraphCatalogEntry*> Catalog::getGraphEntries(const Transaction* transaction) const {
+    std::vector<GraphCatalogEntry*> result;
+    for (auto& [_, entry] : graphs->getEntries(transaction)) {
+        result.push_back(entry->ptrCast<GraphCatalogEntry>());
+    }
+    return result;
+}
+
+void Catalog::createGraph(Transaction* transaction, std::string name, bool isAnyGraph) {
+    auto entry = std::make_unique<GraphCatalogEntry>(std::move(name), isAnyGraph);
+    graphs->createEntry(transaction, std::move(entry));
+}
+
+void Catalog::dropGraph(Transaction* transaction, const std::string& name) {
+    const auto entry = getGraphEntry(transaction, name);
+    graphs->dropEntry(transaction, name, entry->getOID());
+}
+
+void Catalog::serialize(Serializer& ser) const {
+    tables->serialize(ser);
+    sequences->serialize(ser);
+    functions->serialize(ser);
+    types->serialize(ser);
+    indexes->serialize(ser);
+    macros->serialize(ser);
+    internalTables->serialize(ser);
+    internalSequences->serialize(ser);
+    internalFunctions->serialize(ser);
+    graphs->serialize(ser);
+}
+
+void Catalog::serializeSnapshot(Serializer& ser, common::transaction_t snapshotTS) const {
+    const Transaction snapshotTxn(TransactionType::CHECKPOINT, Transaction::DUMMY_TRANSACTION_ID,
+        snapshotTS);
+    tables->serializeSnapshot(ser, &snapshotTxn);
+    sequences->serializeSnapshot(ser, &snapshotTxn);
+    functions->serializeSnapshot(ser, &snapshotTxn);
+    types->serializeSnapshot(ser, &snapshotTxn);
+    indexes->serializeSnapshot(ser, &snapshotTxn);
+    macros->serializeSnapshot(ser, &snapshotTxn);
+    internalTables->serializeSnapshot(ser, &snapshotTxn);
+    internalSequences->serializeSnapshot(ser, &snapshotTxn);
+    internalFunctions->serializeSnapshot(ser, &snapshotTxn);
+    graphs->serializeSnapshot(ser, &snapshotTxn);
+}
+
+void Catalog::deserialize(Deserializer& deSer) {
+    tables = CatalogSet::deserialize(deSer);
+    sequences = CatalogSet::deserialize(deSer);
+    functions = CatalogSet::deserialize(deSer);
+    registerBuiltInFunctions();
+    types = CatalogSet::deserialize(deSer);
+    indexes = CatalogSet::deserialize(deSer);
+    macros = CatalogSet::deserialize(deSer);
+    internalTables = CatalogSet::deserialize(deSer);
+    internalSequences = CatalogSet::deserialize(deSer);
+    internalFunctions = CatalogSet::deserialize(deSer);
+    graphs = CatalogSet::deserialize(deSer);
+}
+
+} // namespace catalog
+} // namespace lbug

@@ -1,0 +1,241 @@
+#pragma once
+
+#include <sys/types.h>
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <vector>
+
+#include "aggregate_hash_table.h"
+#include "common/cast.h"
+#include "common/copy_constructors.h"
+#include "common/data_chunk/data_chunk_state.h"
+#include "common/in_mem_overflow_buffer.h"
+#include "common/mpsc_queue.h"
+#include "common/types/types.h"
+#include "common/vector/value_vector.h"
+#include "processor/operator/aggregate/aggregate_input.h"
+#include "processor/operator/aggregate/base_aggregate.h"
+#include "processor/operator/physical_operator.h"
+#include "processor/result/factorized_table.h"
+#include "processor/result/factorized_table_schema.h"
+
+namespace lbug {
+namespace processor {
+
+struct HashAggregateInfo {
+    std::vector<DataPos> flatKeysPos;
+    std::vector<DataPos> unFlatKeysPos;
+    std::vector<DataPos> dependentKeysPos;
+    FactorizedTableSchema tableSchema;
+
+    HashAggregateInfo(std::vector<DataPos> flatKeysPos, std::vector<DataPos> unFlatKeysPos,
+        std::vector<DataPos> dependentKeysPos, FactorizedTableSchema tableSchema);
+    EXPLICIT_COPY_DEFAULT_MOVE(HashAggregateInfo);
+
+private:
+    HashAggregateInfo(const HashAggregateInfo& other);
+};
+
+// NOLINTNEXTLINE(cppcoreguidelines-virtual-class-destructor): This is a final class.
+class HashAggregateSharedState final : public BaseAggregateSharedState,
+                                       public AggregatePartitioningData {
+
+public:
+    explicit HashAggregateSharedState(main::ClientContext* context, HashAggregateInfo hashAggInfo,
+        const std::vector<function::AggregateFunction>& aggregateFunctions,
+        std::span<AggregateInfo> aggregateInfos, std::vector<common::LogicalType> keyTypes,
+        std::vector<common::LogicalType> payloadTypes);
+
+    void appendTuples(const FactorizedTable& factorizedTable, ft_col_offset_t hashOffset) override {
+        auto numBytesPerTuple = factorizedTable.getTableSchema()->getNumBytesPerTuple();
+        for (ft_tuple_idx_t tupleIdx = 0; tupleIdx < factorizedTable.getNumTuples(); tupleIdx++) {
+            auto tuple = factorizedTable.getTuple(tupleIdx);
+            // Tuples are packed without alignment padding; use memcpy for the hash load.
+            common::hash_t hash;
+            memcpy(&hash, tuple + hashOffset, sizeof(common::hash_t));
+            // shiftForPartitioning is 64 when there is a single partition
+            // (64 - bit_width(0)); shifting a 64-bit value by 64 is UB, and the
+            // partition index is trivially 0 in that case.
+            const auto partitionIdx = shiftForPartitioning >= 64 ?
+                                          0 :
+                                          (hash >> shiftForPartitioning) % globalPartitions.size();
+            auto& partition = globalPartitions[partitionIdx];
+            partition.queue->appendTuple(std::span(tuple, numBytesPerTuple));
+        }
+    }
+
+    void appendDistinctTuple(size_t distinctFuncIndex, std::span<uint8_t> tuple,
+        common::hash_t hash) override {
+        const auto partitionIdx = shiftForPartitioning >= 64 ?
+                                      0 :
+                                      (hash >> shiftForPartitioning) % globalPartitions.size();
+        auto& partition = globalPartitions[partitionIdx];
+        partition.distinctTableQueues[distinctFuncIndex]->appendTuple(tuple);
+    }
+
+    void appendOverflow(common::InMemOverflowBuffer&& overflowBuffer) override {
+        overflow.push(std::make_unique<common::InMemOverflowBuffer>(std::move(overflowBuffer)));
+    }
+
+    void finalizePartitions();
+
+    std::pair<uint64_t, uint64_t> getNextRangeToRead() override;
+
+    // Re-arm this shared state for another execution of the same cached physical plan: the
+    // object is aliased across clones of that plan (copy() passes the shared_ptr through),
+    // so per-execution state (scan cursor, accumulated partitions) must be reset before each
+    // execution. Mirrors what a freshly mapped plan would start with.
+    void resetForReuse();
+
+    void scan(std::span<uint8_t*> entries, std::vector<common::ValueVector*>& keyVectors,
+        common::offset_t startOffset, common::offset_t numRowsToScan,
+        std::vector<uint32_t>& columnIndices);
+
+    uint64_t getNumTuples() const;
+
+    uint64_t getCurrentOffset() const { return currentOffset; }
+
+    void setLimitNumber(uint64_t num) { limitNumber = num; }
+    uint64_t getLimitNumber() const { return limitNumber; }
+
+    const FactorizedTableSchema* getTableSchema() const {
+        return globalPartitions[0].hashTable->getTableSchema();
+    }
+
+    const HashAggregateInfo& getAggregateInfo() const { return aggInfo; }
+
+    void assertFinalized() const;
+
+protected:
+    std::tuple<const FactorizedTable*, common::offset_t> getPartitionForOffset(
+        common::offset_t offset) const;
+
+    struct Partition {
+        std::unique_ptr<AggregateHashTable> hashTable;
+        std::mutex mtx;
+        std::unique_ptr<HashTableQueue> queue;
+        // The tables storing the distinct values for distinct aggregate functions all get merged in
+        // the same way as the main table
+        std::vector<std::unique_ptr<HashTableQueue>> distinctTableQueues;
+        std::atomic<bool> finalized = false;
+    };
+
+public:
+    HashAggregateInfo aggInfo;
+    uint64_t limitNumber;
+    storage::MemoryManager* memoryManager;
+    std::vector<Partition> globalPartitions;
+    // Table schemas for the per-function distinct queues, indexed by aggregate function
+    // (std::nullopt for non-distinct functions). Saved at construction so resetForReuse()
+    // can rebuild the queues from scratch: mergeInto() consumes a queue (nulling its
+    // headBlock), so the old queue cannot be used as a copy source on the next execution.
+    std::vector<std::optional<FactorizedTableSchema>> distinctTableSchemas;
+};
+
+struct HashAggregateLocalState {
+    std::vector<common::ValueVector*> keyVectors;
+    std::vector<common::ValueVector*> dependentKeyVectors;
+    common::DataChunkState* leadingState = nullptr;
+    std::unique_ptr<PartitioningAggregateHashTable> aggregateHashTable;
+
+    void init(HashAggregateSharedState* sharedState, ResultSet& resultSet,
+        main::ClientContext* context, std::vector<function::AggregateFunction>& aggregateFunctions,
+        std::vector<common::LogicalType> types);
+    uint64_t append(const std::vector<AggregateInput>& aggregateInputs,
+        uint64_t multiplicity) const;
+};
+
+struct HashAggregatePrintInfo final : OPPrintInfo {
+    binder::expression_vector keys;
+    binder::expression_vector aggregates;
+    uint64_t limitNum;
+
+    HashAggregatePrintInfo(binder::expression_vector keys, binder::expression_vector aggregates)
+        : keys{std::move(keys)}, aggregates{std::move(aggregates)}, limitNum{UINT64_MAX} {}
+
+    std::string toString() const override;
+
+    std::unique_ptr<OPPrintInfo> copy() const override {
+        return std::unique_ptr<HashAggregatePrintInfo>(new HashAggregatePrintInfo(*this));
+    }
+
+private:
+    HashAggregatePrintInfo(const HashAggregatePrintInfo& other)
+        : OPPrintInfo{other}, keys{other.keys}, aggregates{other.aggregates},
+          limitNum{other.limitNum} {}
+};
+
+class HashAggregate final : public BaseAggregate {
+public:
+    HashAggregate(std::shared_ptr<BaseAggregateSharedState> sharedState,
+        std::vector<function::AggregateFunction> aggregateFunctions,
+        std::vector<AggregateInfo> aggInfos, std::unique_ptr<PhysicalOperator> child, uint32_t id,
+        std::unique_ptr<OPPrintInfo> printInfo)
+        : BaseAggregate{std::move(sharedState), std::move(aggregateFunctions), std::move(aggInfos),
+              std::move(child), id, std::move(printInfo)} {}
+
+    void initLocalStateInternal(ResultSet* resultSet, ExecutionContext* context) override;
+
+    void executeInternal(ExecutionContext* context) override;
+
+    std::unique_ptr<PhysicalOperator> copy() override {
+        return make_unique<HashAggregate>(sharedState, copyVector(aggregateFunctions),
+            copyVector(aggInfos), children[0]->copy(), id, printInfo->copy());
+    }
+
+    const HashAggregateSharedState& getSharedStateReference() const {
+        return common::dynamic_cast_checked<const HashAggregateSharedState&>(*sharedState);
+    }
+    std::shared_ptr<HashAggregateSharedState> getSharedState() const {
+        return std::reinterpret_pointer_cast<HashAggregateSharedState>(sharedState);
+    }
+
+private:
+    HashAggregateLocalState localState;
+};
+
+class HashAggregateFinalize final : public Sink {
+    static constexpr PhysicalOperatorType type_ = PhysicalOperatorType::AGGREGATE_FINALIZE;
+
+public:
+    HashAggregateFinalize(std::shared_ptr<HashAggregateSharedState> sharedState, physical_op_id id,
+        std::unique_ptr<OPPrintInfo> printInfo)
+        : Sink{type_, id, std::move(printInfo)}, sharedState{std::move(sharedState)} {}
+
+    HashAggregateFinalize(std::shared_ptr<HashAggregateSharedState> sharedState,
+        std::unique_ptr<PhysicalOperator> child, physical_op_id id,
+        std::unique_ptr<OPPrintInfo> printInfo)
+        : Sink{type_, std::move(child), id, std::move(printInfo)},
+          sharedState{std::move(sharedState)} {}
+
+    bool isSource() const override { return true; }
+
+    void executeInternal(ExecutionContext* /*context*/) override {
+        DASSERT(sharedState->isReadyForFinalization());
+        sharedState->finalizePartitions();
+    }
+    void finalizeInternal(ExecutionContext* /*context*/) override {
+        sharedState->assertFinalized();
+    }
+
+    void prepareForReuse(storage::MemoryManager* memoryManager) override {
+        sharedState->resetForReuse();
+        PhysicalOperator::prepareForReuse(memoryManager);
+    }
+
+    // Note: The child must be preserved. PlanMapper attaches the aggregate pipeline below this
+    // operator, and physical-plan caching relies on copy() producing a complete tree; dropping
+    // the child here would silently remove whole pipelines from cloned plans.
+    std::unique_ptr<PhysicalOperator> copy() override {
+        return make_unique<HashAggregateFinalize>(sharedState, children[0]->copy(), id,
+            printInfo->copy());
+    }
+
+private:
+    std::shared_ptr<HashAggregateSharedState> sharedState;
+};
+
+} // namespace processor
+} // namespace lbug

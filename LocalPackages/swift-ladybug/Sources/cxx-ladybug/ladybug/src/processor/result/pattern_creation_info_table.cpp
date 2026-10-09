@@ -1,0 +1,70 @@
+#include "processor/result/pattern_creation_info_table.h"
+
+#include <cstring>
+
+namespace lbug {
+namespace processor {
+
+void PatternCreationInfo::updateID(common::executor_id_t executorID,
+    common::executor_info executorInfo, bool storeInsertedPatternIDs,
+    common::nodeID_t nodeID) const {
+    if (storeInsertedPatternIDs) {
+        // Tuple storage is packed without alignment padding; use memcpy for the store.
+        memcpy(tuple + executorID * sizeof(common::nodeID_t), &nodeID, sizeof(common::nodeID_t));
+        return;
+    }
+    if (!executorInfo.contains(executorID)) {
+        return;
+    }
+    // Write the pattern ID to every factorized table column that corresponds to this insert
+    // executor. Multiple columns can map to the same executor when several ON MATCH SET
+    // executors read the ID of the same inserted pattern (e.g. ``ON MATCH SET r.a = ...,
+    // r.b = ...``).
+    for (auto ftColIndex : executorInfo.at(executorID)) {
+        memcpy(tuple + ftColIndex * sizeof(common::nodeID_t), &nodeID, sizeof(common::nodeID_t));
+    }
+}
+
+PatternCreationInfoTable::PatternCreationInfoTable(storage::MemoryManager& memoryManager,
+    std::vector<common::LogicalType> keyTypes, FactorizedTableSchema tableSchema)
+    : AggregateHashTable{memoryManager, copyVector(keyTypes), std::vector<common::LogicalType>{},
+          std::vector<function::AggregateFunction>{} /* empty aggregates */,
+          std::vector<common::LogicalType>{} /* empty distinct agg key*/,
+          0 /* numEntriesToAllocate */, tableSchema.copy()},
+      tuple{nullptr}, idColOffset{tableSchema.getColOffset(keyTypes.size())} {}
+
+PatternCreationInfo PatternCreationInfoTable::getPatternCreationInfo(
+    const std::vector<common::ValueVector*>& keyVectors) {
+    auto hasCreated = true;
+    if (keyVectors.size() == 0) {
+        // Constant keys, we can simply use one tuple to store all information
+        if (factorizedTable->getNumTuples() == 0) {
+            tuple = factorizedTable->appendEmptyTuple();
+            hasCreated = false;
+        }
+        DASSERT(factorizedTable->getNumTuples() == 1);
+        return PatternCreationInfo{tuple, hasCreated};
+    } else {
+        resizeHashTableIfNecessary(1);
+        computeVectorHashes(keyVectors);
+        findHashSlots(keyVectors, std::vector<common::ValueVector*>{}, keyVectors[0]->state.get());
+        hasCreated = tuple != nullptr;
+        auto idTuple = tuple == nullptr ?
+                           factorizedTable->getTuple(factorizedTable->getNumTuples() - 1) :
+                           tuple;
+        return PatternCreationInfo{idTuple + idColOffset, hasCreated};
+    }
+}
+
+uint64_t PatternCreationInfoTable::matchFTEntries(std::span<const common::ValueVector*> keyVectors,
+    uint64_t numMayMatches, uint64_t numNoMatches) {
+    numNoMatches = AggregateHashTable::matchFTEntries(keyVectors, numMayMatches, numNoMatches);
+    DASSERT(numMayMatches <= 1);
+    // If we found the entry for the target key, we set tuple to the key tuple. Otherwise, simply
+    // set tuple to nullptr.
+    tuple = numMayMatches != 0 ? hashSlotsToUpdateAggState[mayMatchIdxes[0]]->getEntry() : nullptr;
+    return numNoMatches;
+}
+
+} // namespace processor
+} // namespace lbug

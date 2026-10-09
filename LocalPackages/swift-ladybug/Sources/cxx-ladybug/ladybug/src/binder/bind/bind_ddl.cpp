@@ -1,0 +1,920 @@
+#include <optional>
+
+#include "binder/binder.h"
+#include "binder/ddl/bound_alter.h"
+#include "binder/ddl/bound_create_index.h"
+#include "binder/ddl/bound_create_sequence.h"
+#include "binder/ddl/bound_create_table.h"
+#include "binder/ddl/bound_create_type.h"
+#include "binder/ddl/bound_drop.h"
+#include "binder/expression_visitor.h"
+#include "catalog/catalog.h"
+#include "catalog/catalog_entry/index_catalog_entry.h"
+#include "catalog/catalog_entry/node_table_catalog_entry.h"
+#include "catalog/catalog_entry/rel_group_catalog_entry.h"
+#include "catalog/catalog_entry/sequence_catalog_entry.h"
+#include "common/constants.h"
+#include "common/enums/extend_direction_util.h"
+#include "common/enums/storage_format.h"
+#include "common/exception/binder.h"
+#include "common/exception/message.h"
+#include "common/string_utils.h"
+#include "common/system_config.h"
+#include "common/types/types.h"
+#include "function/cast/functions/cast_from_string_functions.h"
+#include "function/sequence/sequence_functions.h"
+#include "function/table/table_function.h"
+#include "main/client_context.h"
+#include "main/database_manager.h"
+#include "parser/ddl/alter.h"
+#include "parser/ddl/create_index.h"
+#include "parser/ddl/create_sequence.h"
+#include "parser/ddl/create_table.h"
+#include "parser/ddl/create_table_info.h"
+#include "parser/ddl/create_type.h"
+#include "parser/ddl/drop.h"
+#include "parser/expression/parsed_function_expression.h"
+#include "parser/expression/parsed_literal_expression.h"
+#include "storage/index/art_index.h"
+#include "storage/index/hash_index.h"
+#include "storage/storage_manager.h"
+#include "transaction/transaction.h"
+#include <format>
+
+using namespace lbug::common;
+using namespace lbug::parser;
+using namespace lbug::catalog;
+
+namespace lbug {
+namespace binder {
+
+std::string BoundCreateIndexInfo::toString() const {
+    return std::format("{} INDEX {} ON {}({})", indexType, indexName, tableName, propertyName);
+}
+
+static std::string getExistingIndexName(Catalog* catalog, transaction::Transaction* transaction,
+    common::table_id_t tableID, common::property_id_t propertyID) {
+    for (auto* indexEntry : catalog->getIndexEntries(transaction, tableID)) {
+        if (indexEntry->containsPropertyID(propertyID)) {
+            return indexEntry->getIndexName();
+        }
+    }
+    return "";
+}
+
+static void validatePropertyName(const std::vector<PropertyDefinition>& definitions) {
+    case_insensitve_set_t nameSet;
+    for (auto& definition : definitions) {
+        if (nameSet.contains(definition.getName())) {
+            throw BinderException(std::format(
+                "Duplicated column name: {}, column name must be unique.", definition.getName()));
+        }
+        if (Binder::reservedInColumnName(definition.getName())) {
+            throw BinderException(
+                std::format("{} is a reserved property name.", definition.getName()));
+        }
+        nameSet.insert(definition.getName());
+    }
+}
+
+std::vector<PropertyDefinition> Binder::bindPropertyDefinitions(
+    const std::vector<ParsedPropertyDefinition>& parsedDefinitions, const std::string& tableName) {
+    std::vector<PropertyDefinition> definitions;
+    for (auto& def : parsedDefinitions) {
+        auto type = LogicalType::convertFromString(def.getType(), clientContext);
+        auto defaultExpr =
+            resolvePropertyDefault(def.defaultExpr.get(), type, tableName, def.getName());
+        auto boundExpr = expressionBinder.bindExpression(*defaultExpr);
+        if (boundExpr->dataType != type) {
+            expressionBinder.implicitCast(boundExpr, type);
+        }
+        auto columnDefinition = ColumnDefinition(def.getName(), std::move(type));
+        definitions.emplace_back(std::move(columnDefinition), std::move(defaultExpr));
+    }
+    validatePropertyName(definitions);
+    return definitions;
+}
+
+std::unique_ptr<ParsedExpression> Binder::resolvePropertyDefault(ParsedExpression* parsedDefault,
+    const LogicalType& type, const std::string& tableName, const std::string& propertyName) {
+    if (parsedDefault == nullptr) { // No default provided.
+        if (type.getLogicalTypeID() == LogicalTypeID::SERIAL) {
+            auto serialName = SequenceCatalogEntry::getSerialName(tableName, propertyName);
+            auto literalExpr = std::make_unique<ParsedLiteralExpression>(Value(serialName), "");
+            return std::make_unique<ParsedFunctionExpression>(function::NextValFunction::name,
+                std::move(literalExpr), "" /* rawName */);
+        } else {
+            return std::make_unique<ParsedLiteralExpression>(Value::createNullValue(type), "NULL");
+        }
+    } else {
+        if (type.getLogicalTypeID() == LogicalTypeID::SERIAL) {
+            throw BinderException("No DEFAULT value should be set for SERIAL columns");
+        }
+        return parsedDefault->copy();
+    }
+}
+
+static void validatePrimaryKey(const std::string& pkColName,
+    const std::vector<PropertyDefinition>& definitions) {
+    uint32_t primaryKeyIdx = UINT32_MAX;
+    for (auto i = 0u; i < definitions.size(); i++) {
+        if (definitions[i].getName() == pkColName) {
+            primaryKeyIdx = i;
+        }
+    }
+    if (primaryKeyIdx == UINT32_MAX) {
+        throw BinderException(
+            "Primary key " + pkColName + " does not match any of the predefined node properties.");
+    }
+    const auto& pkType = definitions[primaryKeyIdx].getType();
+    if (!pkType.isInternalType()) {
+        throw BinderException(ExceptionMessage::invalidPKType(pkType.toString()));
+    }
+    if (pkType.getLogicalTypeID() == LogicalTypeID::JSON) {
+        throw BinderException(ExceptionMessage::invalidPKType(pkType.toString()));
+    }
+    switch (pkType.getPhysicalType()) {
+    case PhysicalTypeID::UINT8:
+    case PhysicalTypeID::UINT16:
+    case PhysicalTypeID::UINT32:
+    case PhysicalTypeID::UINT64:
+    case PhysicalTypeID::INT8:
+    case PhysicalTypeID::INT16:
+    case PhysicalTypeID::INT32:
+    case PhysicalTypeID::INT64:
+    case PhysicalTypeID::INT128:
+    case PhysicalTypeID::UINT128:
+    case PhysicalTypeID::STRING:
+    case PhysicalTypeID::FLOAT:
+    case PhysicalTypeID::DOUBLE:
+        break;
+    default:
+        throw BinderException(ExceptionMessage::invalidPKType(pkType.toString()));
+    }
+}
+
+BoundCreateTableInfo Binder::bindCreateTableInfo(const CreateTableInfo* info) {
+    switch (info->type) {
+    case TableType::NODE: {
+        return bindCreateNodeTableInfo(info);
+    }
+    case TableType::REL: {
+        return bindCreateRelTableGroupInfo(info);
+    }
+    default: {
+        UNREACHABLE_CODE;
+    }
+    }
+}
+
+void Binder::validateNodeTableType(const TableCatalogEntry* entry) {
+    if (entry->getType() != CatalogEntryType::NODE_TABLE_ENTRY &&
+        entry->getType() != CatalogEntryType::FOREIGN_TABLE_ENTRY) {
+        throw BinderException(std::format("{} is not of type NODE.", entry->getName()));
+    }
+}
+
+void Binder::validateTableExistence(const main::ClientContext& context,
+    const std::string& tableName) {
+    auto transaction = transaction::Transaction::Get(context);
+    if (!Catalog::Get(context)->containsTable(transaction, tableName)) {
+        throw BinderException{std::format("Table {} does not exist.", tableName)};
+    }
+}
+
+void Binder::validateColumnExistence(const TableCatalogEntry* entry,
+    const std::string& columnName) {
+    if (!entry->containsProperty(columnName)) {
+        throw BinderException{
+            std::format("Column {} does not exist in table {}.", columnName, entry->getName())};
+    }
+}
+
+static std::string getStorage(const case_insensitive_map_t<Value>& options) {
+    if (options.contains(TableOptionConstants::REL_STORAGE_OPTION)) {
+        return options.at(TableOptionConstants::REL_STORAGE_OPTION).toString();
+    }
+    return "";
+}
+
+static ExtendDirection getStorageDirection(const case_insensitive_map_t<Value>& options) {
+    if (options.contains(TableOptionConstants::REL_STORAGE_DIRECTION_OPTION)) {
+        return ExtendDirectionUtil::fromString(
+            options.at(TableOptionConstants::REL_STORAGE_DIRECTION_OPTION).toString());
+    }
+    return DEFAULT_EXTEND_DIRECTION;
+}
+
+static StorageFormat getStorageFormat(const case_insensitive_map_t<Value>& options) {
+    if (options.contains(TableOptionConstants::STORAGE_FORMAT_OPTION)) {
+        return StorageFormatUtils::fromString(
+            options.at(TableOptionConstants::STORAGE_FORMAT_OPTION).toString());
+    }
+    return StorageFormat::NONE;
+}
+
+static void validatePartitionColumn(const std::vector<PropertyDefinition>& propertyDefinitions,
+    const std::string& columnName) {
+    auto propertyIt = std::find_if(propertyDefinitions.begin(), propertyDefinitions.end(),
+        [&](const PropertyDefinition& def) { return def.getName() == columnName; });
+    if (propertyIt == propertyDefinitions.end()) {
+        throw BinderException(std::format(
+            "Partition column {} does not exist. A partition column must be an existing column "
+            "of the table.",
+            columnName));
+    }
+    if (!LogicalTypeUtils::isPartitionable(propertyIt->getType())) {
+        throw BinderException(std::format(
+            "Partition column {} has type {} which is not eligible for partitioning. Partition "
+            "columns must be an integral, temporal or textual type.",
+            columnName, propertyIt->getType().toString()));
+    }
+}
+
+// A rel table physically attaches to node tables through CSR indexes keyed by the node table's
+// ID. A partitioned parent owns no storage, so declaring FROM/TO against it must resolve to its
+// partition subgraphs: one FROM-TO pair per (source partition, destination table). This mirrors
+// how reads expand a partitioned parent into its partitions.
+static std::vector<TableCatalogEntry*> resolveRelEndpoints(Catalog* catalog,
+    const transaction::Transaction* transaction, TableCatalogEntry* entry) {
+    if (entry->getType() == CatalogEntryType::NODE_TABLE_ENTRY) {
+        auto* nodeEntry = entry->ptrCast<NodeTableCatalogEntry>();
+        if (nodeEntry->isPartitioned()) {
+            std::vector<TableCatalogEntry*> partitions;
+            partitions.reserve(nodeEntry->getChildTableIDs().size());
+            for (auto childID : nodeEntry->getChildTableIDs()) {
+                partitions.push_back(catalog->getTableCatalogEntry(transaction, childID));
+            }
+            return partitions;
+        }
+    }
+    return {entry};
+}
+
+BoundCreateTableInfo Binder::bindCreateNodeTableInfo(const CreateTableInfo* info) {
+    auto propertyDefinitions = bindPropertyDefinitions(info->propertyDefinitions, info->tableName);
+    auto& extraInfo = info->extraInfo->constCast<ExtraCreateNodeTableInfo>();
+    validatePrimaryKey(extraInfo.pKName, propertyDefinitions);
+    auto boundOptions = bindParsingOptions(extraInfo.options);
+    auto storage = getStorage(boundOptions);
+    auto storageFormat = getStorageFormat(boundOptions);
+    std::optional<BoundPartitionInfo> partitionInfo;
+    if (extraInfo.partitionInfo.has_value()) {
+        const auto& parsed = *extraInfo.partitionInfo;
+        BoundPartitionMethod method;
+        switch (parsed.method) {
+        case ParsedPartitionMethod::HASH:
+            method = BoundPartitionMethod::HASH;
+            break;
+        case ParsedPartitionMethod::LIST:
+            // LIST partitions dynamically: one partition per distinct key value, created on
+            // demand. It takes no PARTITIONS clause.
+            method = BoundPartitionMethod::LIST;
+            validatePartitionColumn(propertyDefinitions, parsed.columnName);
+            partitionInfo = BoundPartitionInfo(method, parsed.columnName, 0 /* numPartitions */);
+            break;
+            // Real range partitioning must split on the actual distribution of values (equal
+            // domain splits would dump all real-world data into one bucket). Until that dynamic
+            // splitting exists, refuse the DDL rather than silently falling back to hash routing.
+        case ParsedPartitionMethod::RANGE:
+            throw BinderException(
+                "RANGE partitioning is not implemented yet. RANGE requires partition bounds "
+                "derived from the actual value distribution, which is future work. Use PARTITION "
+                "BY HASH instead.");
+        default:
+            UNREACHABLE_CODE;
+        }
+        if (method == BoundPartitionMethod::HASH) {
+            if (parsed.numPartitions == 0) {
+                throw BinderException("Number of partitions must be greater than 0.");
+            }
+            validatePartitionColumn(propertyDefinitions, parsed.columnName);
+            partitionInfo = BoundPartitionInfo(method, parsed.columnName, parsed.numPartitions);
+        }
+    }
+    auto boundExtraInfo = std::make_unique<BoundExtraCreateNodeTableInfo>(extraInfo.pKName,
+        std::move(propertyDefinitions), std::move(storage), std::move(storageFormat),
+        std::move(partitionInfo));
+    return BoundCreateTableInfo(CatalogEntryType::NODE_TABLE_ENTRY, info->tableName,
+        info->onConflict, std::move(boundExtraInfo), clientContext->useInternalCatalogEntry());
+}
+
+std::vector<PropertyDefinition> Binder::bindRelPropertyDefinitions(const CreateTableInfo& info) {
+    std::vector<PropertyDefinition> propertyDefinitions;
+    propertyDefinitions.emplace_back(
+        ColumnDefinition(InternalKeyword::ID, LogicalType::INTERNAL_ID()));
+    for (auto& definition : bindPropertyDefinitions(info.propertyDefinitions, info.tableName)) {
+        propertyDefinitions.push_back(definition.copy());
+    }
+    return propertyDefinitions;
+}
+
+BoundCreateTableInfo Binder::bindCreateRelTableGroupInfo(const CreateTableInfo* info) {
+    auto propertyDefinitions = bindRelPropertyDefinitions(*info);
+    auto& extraInfo = info->extraInfo->constCast<ExtraCreateRelTableGroupInfo>();
+    auto srcMultiplicity = RelMultiplicityUtils::getFwd(extraInfo.relMultiplicity);
+    auto dstMultiplicity = RelMultiplicityUtils::getBwd(extraInfo.relMultiplicity);
+    auto boundOptions = bindParsingOptions(extraInfo.options);
+    auto storageDirection = getStorageDirection(boundOptions);
+    auto storage = getStorage(boundOptions);
+    auto storageFormat = getStorageFormat(boundOptions);
+    std::optional<function::TableFunction> scanFunction = std::nullopt;
+    std::optional<std::unique_ptr<function::TableFuncBindData>> scanBindData = std::nullopt;
+    std::string foreignDatabaseName;
+    if (!storage.empty()) {
+        auto dotPos = storage.find('.');
+        // Check if storage is database.table format by verifying the attached database exists
+        // Handle special case where icebug-disk storage could contain a dot
+        // Otherwise, treat as file path (e.g., "dataset/demo-db/icebug-disk/demo" or
+        // "data.parquet")
+        if (storageFormat != StorageFormat::ICEBUG_DISK && dotPos != std::string::npos) {
+            std::string dbName = storage.substr(0, dotPos);
+            std::string tableName = storage.substr(dotPos + 1);
+            if (!dbName.empty()) {
+                auto transaction = transaction::Transaction::Get(*clientContext);
+                auto attachedDB =
+                    main::DatabaseManager::Get(*clientContext)->getAttachedDatabase(dbName);
+                // Only process as database.table if the database is actually attached
+                if (attachedDB) {
+                    if (!attachedDB->getCatalog()->containsTable(transaction, tableName,
+                            clientContext->useInternalCatalogEntry())) {
+                        throw BinderException(
+                            std::format("Table '{}' does not exist in attached database '{}'.",
+                                tableName, dbName));
+                    }
+                    auto tableEntry = attachedDB->getCatalog()->getTableCatalogEntry(transaction,
+                        tableName, clientContext->useInternalCatalogEntry());
+
+                    // For external storage, derive property definitions from the external table's
+                    // schema Get column information from the table properties
+                    auto tableProperties = tableEntry->getProperties();
+                    propertyDefinitions.clear();
+                    propertyDefinitions.emplace_back(
+                        ColumnDefinition(InternalKeyword::ID, LogicalType::INTERNAL_ID()));
+
+                    // Add properties from external table columns
+                    for (auto& property : tableProperties) {
+                        auto columnName = property.getName();
+                        propertyDefinitions.emplace_back(
+                            ColumnDefinition(columnName, property.getType().copy()));
+                    }
+
+                    if (propertyDefinitions.size() == 1) { // Only has ID column
+                        throw BinderException(
+                            std::format("Storage table '{}' must have at least one property "
+                                        "column.",
+                                tableName));
+                    }
+
+                    scanFunction = tableEntry->getScanFunction();
+                    auto boundScanInfo =
+                        tableEntry->getBoundScanInfo(clientContext, storage /* nodeUniqueName */);
+                    if (!boundScanInfo &&
+                        tableEntry->getType() == CatalogEntryType::NODE_TABLE_ENTRY) {
+                        auto nodeTableEntry = tableEntry->ptrCast<NodeTableCatalogEntry>();
+                        // Try the referenced entry (real entry for shadow tables)
+                        boundScanInfo = nodeTableEntry->getReferencedEntry()->getBoundScanInfo(
+                            clientContext, storage);
+                    }
+                    scanBindData = std::move(boundScanInfo->bindData);
+                    // Set foreign database name for attached databases
+                    foreignDatabaseName = std::format("{}({})", dbName, attachedDB->getDBType());
+                }
+                // else: attachedDB doesn't exist, so treat storage as a file path
+            }
+        }
+    }
+    // Bind from to pairs
+    auto* catalog = Catalog::Get(*clientContext);
+    auto* transaction = transaction::Transaction::Get(*clientContext);
+    node_table_id_pair_set_t nodePairsSet;
+    std::vector<BoundRelTableInfo> relTableInfos;
+    for (auto& connection : extraInfo.connections) {
+        const auto& srcTableName = connection.srcTableName;
+        const auto& dstTableName = connection.dstTableName;
+        auto [srcEntry, srcDbName] = bindNodeTableEntry(srcTableName);
+        validateNodeTableType(srcEntry);
+        auto [dstEntry, dstDbName] = bindNodeTableEntry(dstTableName);
+        validateNodeTableType(dstEntry);
+
+        // For foreign-backed rel tables, validate that FROM and TO are foreign tables
+        if (scanFunction.has_value()) {
+            // Both must be foreign tables
+            if (srcEntry->getType() != CatalogEntryType::FOREIGN_TABLE_ENTRY ||
+                dstEntry->getType() != CatalogEntryType::FOREIGN_TABLE_ENTRY) {
+                throw BinderException("Foreign-backed rel tables require both FROM and TO tables "
+                                      "to be foreign tables.");
+            }
+            // Extract database names from qualified table names
+            auto srcDotPos = srcTableName.find('.');
+            auto dstDotPos = dstTableName.find('.');
+            if (srcDotPos == std::string::npos || dstDotPos == std::string::npos) {
+                throw BinderException(
+                    "Foreign-backed rel tables require qualified table names (database.table).");
+            }
+            auto srcDbName = srcTableName.substr(0, srcDotPos);
+            auto dstDbName = dstTableName.substr(0, dstDotPos);
+            if (srcDbName != dstDbName) {
+                throw BinderException(
+                    std::format("Cannot create rel table with FROM and TO tables from different "
+                                "databases. FROM is from '{}', TO is from '{}'.",
+                        srcDbName, dstDbName));
+            }
+        }
+
+        bool isSrcIcebugDisk = srcEntry->getType() == CatalogEntryType::NODE_TABLE_ENTRY ?
+                                   srcEntry->ptrCast<NodeTableCatalogEntry>()->getStorageFormat() ==
+                                       StorageFormat::ICEBUG_DISK :
+                                   false;
+        bool isDstIcebugDisk = dstEntry->getType() == CatalogEntryType::NODE_TABLE_ENTRY ?
+                                   dstEntry->ptrCast<NodeTableCatalogEntry>()->getStorageFormat() ==
+                                       StorageFormat::ICEBUG_DISK :
+                                   false;
+        bool isRelIcebugDisk = (storageFormat == StorageFormat::ICEBUG_DISK);
+
+        // We don't allow mixing icebug-disk tables with non-icebug-disk tables
+        // We only allow icebug-disk rel tables to connect icebug-disk node tables
+        if ((!isRelIcebugDisk && (isSrcIcebugDisk || isDstIcebugDisk)) ||
+            (isRelIcebugDisk && (!isSrcIcebugDisk || !isDstIcebugDisk))) {
+            throw BinderException(
+                "Cannot mix icebug-disk tables with non-icebug-disk tables in CREATE REL TABLE.");
+        }
+
+        // Use the actual shadow table IDs, not FOREIGN_TABLE_ID
+        // The shadow tables allow the query planner to distinguish between different node tables
+        // A partitioned parent resolves to its partition subgraphs (one pair per partition).
+        for (auto* srcEndpoint : resolveRelEndpoints(catalog, transaction, srcEntry)) {
+            for (auto* dstEndpoint : resolveRelEndpoints(catalog, transaction, dstEntry)) {
+                auto srcTableID = srcEndpoint->getTableID();
+                auto dstTableID = dstEndpoint->getTableID();
+                NodeTableIDPair pair{srcTableID, dstTableID};
+                if (nodePairsSet.contains(pair)) {
+                    throw BinderException(std::format("Found duplicate FROM-TO {}-{} pairs.",
+                        srcTableName, dstTableName));
+                }
+                nodePairsSet.insert(pair);
+                const auto& connectionMultiplicity = connection.relMultiplicity.has_value() ?
+                                                         *connection.relMultiplicity :
+                                                         extraInfo.relMultiplicity;
+                relTableInfos.emplace_back(pair,
+                    RelMultiplicityUtils::getFwd(connectionMultiplicity),
+                    RelMultiplicityUtils::getBwd(connectionMultiplicity));
+            }
+        }
+    }
+    auto boundExtraInfo = std::make_unique<BoundExtraCreateRelTableGroupInfo>(
+        std::move(propertyDefinitions), srcMultiplicity, dstMultiplicity, storageDirection,
+        std::move(relTableInfos), std::move(storage), std::move(storageFormat),
+        std::move(scanFunction), std::move(scanBindData), std::move(foreignDatabaseName));
+    return BoundCreateTableInfo(CatalogEntryType::REL_GROUP_ENTRY, info->tableName,
+        info->onConflict, std::move(boundExtraInfo), clientContext->useInternalCatalogEntry());
+}
+
+std::unique_ptr<BoundStatement> Binder::bindCreateTable(const Statement& statement) {
+    auto& createTable = statement.constCast<CreateTable>();
+    if (createTable.getSource()) {
+        return bindCreateTableAs(createTable);
+    }
+    auto boundCreateInfo = bindCreateTableInfo(createTable.getInfo());
+    return std::make_unique<BoundCreateTable>(std::move(boundCreateInfo),
+        BoundStatementResult::createSingleStringColumnResult());
+}
+
+std::unique_ptr<BoundStatement> Binder::bindCreateIndex(const Statement& statement) {
+    auto& createIndex = statement.constCast<CreateIndex>();
+    auto& info = createIndex.getInfo();
+    auto indexType = info.indexType;
+    StringUtils::toUpper(indexType);
+    auto indexTypeOptional = storage::StorageManager::Get(*clientContext)->getIndexType(indexType);
+    if (!indexTypeOptional.has_value()) {
+        throw BinderException(std::format("Index type {} does not exist.", info.indexType));
+    }
+    const auto& registeredIndexType = indexTypeOptional.value().get();
+    if (registeredIndexType.constraintType != storage::IndexConstraintType::PRIMARY) {
+        throw BinderException(
+            std::format("Only primary-key indexes are supported by CREATE INDEX."));
+    }
+    auto catalog = Catalog::Get(*clientContext);
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    validateTableExistence(*clientContext, info.tableName);
+    auto tableEntry = catalog->getTableCatalogEntry(transaction, info.tableName);
+    validateNodeTableType(tableEntry);
+    validateColumnExistence(tableEntry, info.propertyName);
+    auto nodeTableEntry = tableEntry->ptrCast<NodeTableCatalogEntry>();
+    if (!nodeTableEntry->getStorage().empty()) {
+        throw BinderException("CREATE INDEX is only supported on native node tables.");
+    }
+    const auto isPrimaryIndex =
+        StringUtils::caseInsensitiveEquals(nodeTableEntry->getPrimaryKeyName(), info.propertyName);
+    const auto isArtIndex = StringUtils::caseInsensitiveEquals(indexType,
+        storage::ArtPrimaryKeyIndex::getIndexType().typeName);
+    if (!isPrimaryIndex && !isArtIndex) {
+        throw BinderException(std::format(
+            "{} indexes are currently supported only on node primary keys.", indexType));
+    }
+    auto boundOptions = bindParsingOptions(info.options);
+    if (!boundOptions.empty()) {
+        throw BinderException(std::format("CREATE {} INDEX does not support OPTIONS.", indexType));
+    }
+    auto& property = tableEntry->getProperty(info.propertyName);
+    std::vector<PropertyDefinition> propertyDefinitions;
+    propertyDefinitions.push_back(property.copy());
+    if (isPrimaryIndex) {
+        validatePrimaryKey(property.getName(), propertyDefinitions);
+    }
+    auto indexName = info.indexName.empty() ? std::string(storage::PrimaryKeyIndex::DEFAULT_NAME) :
+                                              info.indexName;
+    if (info.onConflict == ConflictAction::ON_CONFLICT_THROW) {
+        const auto indexNameExists =
+            catalog->containsIndex(transaction, tableEntry->getTableID(), indexName);
+        const auto indexedPropertyExists = catalog->containsIndex(transaction,
+            tableEntry->getTableID(), tableEntry->getPropertyID(property.getName()));
+        if (indexNameExists || indexedPropertyExists) {
+            const auto existingIndexName =
+                indexNameExists ?
+                    indexName :
+                    getExistingIndexName(catalog, transaction, tableEntry->getTableID(),
+                        tableEntry->getPropertyID(property.getName()));
+            throw BinderException(existingIndexName + " already exists in catalog.");
+        }
+    }
+    BoundCreateIndexInfo boundInfo{indexType, std::move(indexName), info.tableName,
+        tableEntry->getTableID(), property.getName(), tableEntry->getPropertyID(property.getName()),
+        tableEntry->getColumnID(property.getName()), property.getType().getPhysicalType(),
+        isPrimaryIndex, info.onConflict};
+    return std::make_unique<BoundCreateIndex>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindCreateTableAs(const Statement& statement) {
+    auto& createTable = statement.constCast<CreateTable>();
+    auto boundInnerQuery = bindQuery(*createTable.getSource()->statement.get());
+    auto innerQueryResult = boundInnerQuery->getStatementResult();
+    auto columnNames = innerQueryResult->getColumnNames();
+    auto columnTypes = innerQueryResult->getColumnTypes();
+    std::vector<PropertyDefinition> propertyDefinitions;
+    propertyDefinitions.reserve(columnNames.size());
+    for (size_t i = 0; i < columnNames.size(); ++i) {
+        propertyDefinitions.emplace_back(
+            ColumnDefinition(std::string(columnNames[i]), columnTypes[i].copy()));
+    }
+    if (columnNames.empty()) {
+        throw BinderException("Subquery returns no columns");
+    }
+    auto createInfo = createTable.getInfo();
+    switch (createInfo->type) {
+    case TableType::NODE: {
+        // first column is primary key column temporarily for now
+        auto pkName = columnNames[0];
+        validatePrimaryKey(pkName, propertyDefinitions);
+        auto boundCopyFromInfo = bindCopyNodeFromInfo(createInfo->tableName, propertyDefinitions,
+            createTable.getSource(), options_t{}, columnNames, columnTypes, false /* byColumn */);
+        auto boundExtraInfo =
+            std::make_unique<BoundExtraCreateNodeTableInfo>(pkName, std::move(propertyDefinitions));
+        auto boundCreateInfo = BoundCreateTableInfo(CatalogEntryType::NODE_TABLE_ENTRY,
+            createInfo->tableName, createInfo->onConflict, std::move(boundExtraInfo),
+            clientContext->useInternalCatalogEntry());
+        auto boundCreateTable = std::make_unique<BoundCreateTable>(std::move(boundCreateInfo),
+            BoundStatementResult::createSingleStringColumnResult());
+        boundCreateTable->setCopyInfo(std::move(boundCopyFromInfo));
+        return boundCreateTable;
+    }
+    case TableType::REL: {
+        auto& extraInfo = createInfo->extraInfo->constCast<ExtraCreateRelTableGroupInfo>();
+        // Currently we don't support multiple from/to pairs for create rel table as
+        if (extraInfo.connections.size() > 1) {
+            throw BinderException(
+                "Multiple FROM/TO pairs are not supported for CREATE REL TABLE AS.");
+        }
+        propertyDefinitions.insert(propertyDefinitions.begin(),
+            PropertyDefinition(ColumnDefinition(InternalKeyword::ID, LogicalType::INTERNAL_ID())));
+        auto catalog = Catalog::Get(*clientContext);
+        auto transaction = transaction::Transaction::Get(*clientContext);
+        auto fromTable =
+            catalog->getTableCatalogEntry(transaction, extraInfo.connections[0].srcTableName)
+                ->ptrCast<NodeTableCatalogEntry>();
+        auto toTable =
+            catalog->getTableCatalogEntry(transaction, extraInfo.connections[0].dstTableName)
+                ->ptrCast<NodeTableCatalogEntry>();
+        auto boundCreateInfo = bindCreateRelTableGroupInfo(createInfo);
+        auto boundCopyFromInfo = bindCopyRelFromInfo(createInfo->tableName, propertyDefinitions,
+            createTable.getSource(), options_t{}, columnNames, columnTypes, fromTable, toTable);
+        boundCreateInfo.extraInfo->ptrCast<BoundExtraCreateTableInfo>()->propertyDefinitions =
+            std::move(propertyDefinitions);
+        auto boundCreateTable = std::make_unique<BoundCreateTable>(std::move(boundCreateInfo),
+            BoundStatementResult::createSingleStringColumnResult());
+        boundCreateTable->setCopyInfo(std::move(boundCopyFromInfo));
+        return boundCreateTable;
+    }
+    default: {
+        UNREACHABLE_CODE;
+    }
+    }
+}
+
+std::unique_ptr<BoundStatement> Binder::bindCreateType(const Statement& statement) const {
+    auto createType = statement.constPtrCast<CreateType>();
+    auto name = createType->getName();
+    LogicalType type = LogicalType::convertFromString(createType->getDataType(), clientContext);
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    if (Catalog::Get(*clientContext)->containsType(transaction, name)) {
+        throw BinderException{std::format("Duplicated type name: {}.", name)};
+    }
+    return std::make_unique<BoundCreateType>(std::move(name), std::move(type));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindCreateSequence(const Statement& statement) const {
+    auto& createSequence = statement.constCast<CreateSequence>();
+    auto info = createSequence.getInfo();
+    auto sequenceName = info.sequenceName;
+    int64_t startWith = 0;
+    int64_t increment = 0;
+    int64_t minValue = 0;
+    int64_t maxValue = 0;
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    switch (info.onConflict) {
+    case ConflictAction::ON_CONFLICT_THROW: {
+        if (Catalog::Get(*clientContext)->containsSequence(transaction, sequenceName)) {
+            throw BinderException(sequenceName + " already exists in catalog.");
+        }
+    } break;
+    default:
+        break;
+    }
+    auto literal = string_t{info.increment.c_str(), info.increment.length()};
+    if (!function::CastString::tryCast(literal, increment)) {
+        throw BinderException("Out of bounds: SEQUENCE accepts integers within INT64.");
+    }
+    if (increment == 0) {
+        throw BinderException("INCREMENT must be non-zero.");
+    }
+
+    if (info.minValue == "") {
+        minValue = increment > 0 ? 1 : std::numeric_limits<int64_t>::min();
+    } else {
+        literal = string_t{info.minValue.c_str(), info.minValue.length()};
+        if (!function::CastString::tryCast(literal, minValue)) {
+            throw BinderException("Out of bounds: SEQUENCE accepts integers within INT64.");
+        }
+    }
+    if (info.maxValue == "") {
+        maxValue = increment > 0 ? std::numeric_limits<int64_t>::max() : -1;
+    } else {
+        literal = string_t{info.maxValue.c_str(), info.maxValue.length()};
+        if (!function::CastString::tryCast(literal, maxValue)) {
+            throw BinderException("Out of bounds: SEQUENCE accepts integers within INT64.");
+        }
+    }
+    if (info.startWith == "") {
+        startWith = increment > 0 ? minValue : maxValue;
+    } else {
+        literal = string_t{info.startWith.c_str(), info.startWith.length()};
+        if (!function::CastString::tryCast(literal, startWith)) {
+            throw BinderException("Out of bounds: SEQUENCE accepts integers within INT64.");
+        }
+    }
+
+    if (maxValue < minValue) {
+        throw BinderException("SEQUENCE MAXVALUE should be greater than or equal to MINVALUE.");
+    }
+    if (startWith < minValue || startWith > maxValue) {
+        throw BinderException("SEQUENCE START value should be between MINVALUE and MAXVALUE.");
+    }
+
+    auto boundInfo = BoundCreateSequenceInfo(sequenceName, startWith, increment, minValue, maxValue,
+        info.cycle, info.onConflict, false /* isInternal */);
+    return std::make_unique<BoundCreateSequence>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindDrop(const Statement& statement) {
+    auto& drop = statement.constCast<Drop>();
+    return std::make_unique<BoundDrop>(drop.getDropInfo());
+}
+
+static void validateNotIceDiskTable(main::ClientContext* clientContext,
+    const std::string& tableName) {
+    auto catalog = Catalog::Get(*clientContext);
+    auto transaction = transaction::Transaction::Get(*clientContext);
+
+    if (!catalog->containsTable(transaction, tableName)) {
+        return;
+    }
+
+    auto tableEntry = catalog->getTableCatalogEntry(transaction, tableName);
+    StorageFormat storageFormat = StorageFormat::NONE;
+
+    if (tableEntry->getTableType() == common::TableType::NODE) {
+        storageFormat = tableEntry->ptrCast<NodeTableCatalogEntry>()->getStorageFormat();
+    } else if (tableEntry->getTableType() == common::TableType::REL) {
+        storageFormat = tableEntry->ptrCast<RelGroupCatalogEntry>()->getStorageFormat();
+    }
+
+    if (storageFormat == StorageFormat::ICEBUG_DISK) {
+        throw BinderException(
+            std::format("Cannot alter table {}: icebug-disk tables are immutable.", tableName));
+    }
+}
+
+std::unique_ptr<BoundStatement> Binder::bindAlter(const Statement& statement) {
+    auto& alter = statement.constCast<Alter>();
+
+    // we don't support alter operations on icebug-disk tables
+    validateNotIceDiskTable(clientContext, alter.getInfo()->tableName);
+
+    // Partitioned tables have restricted ALTER support until ALTER propagation to partition
+    // subgraphs lands: only RENAME (which renames the <parent>_p<i> partitions along with the
+    // parent) and COMMENT are accepted on the parent, and partitions cannot be altered
+    // directly at all - they are managed by their partitioned parent.
+    {
+        auto* catalog = Catalog::Get(*clientContext);
+        auto* transaction = transaction::Transaction::Get(*clientContext);
+        const auto& tableName = alter.getInfo()->tableName;
+        if (catalog->containsTable(transaction, tableName)) {
+            auto* entry = catalog->getTableCatalogEntry(transaction, tableName);
+            if (entry->getType() == CatalogEntryType::NODE_TABLE_ENTRY) {
+                auto* nodeEntry = entry->ptrCast<NodeTableCatalogEntry>();
+                if (nodeEntry->isPartitionChild()) {
+                    auto* parent =
+                        catalog->getTableCatalogEntry(transaction, nodeEntry->getParentTableID());
+                    throw BinderException(std::format(
+                        "Cannot ALTER partition {}: it is managed by partitioned table {}.",
+                        tableName, parent->getName()));
+                }
+                if (nodeEntry->isPartitioned() && alter.getInfo()->type != AlterType::RENAME &&
+                    alter.getInfo()->type != AlterType::COMMENT) {
+                    throw BinderException(std::format(
+                        "Cannot ALTER partitioned table {}: ALTER on a partitioned table is not "
+                        "supported yet. Drop and recreate the table instead.",
+                        tableName));
+                }
+            }
+        }
+    }
+
+    switch (alter.getInfo()->type) {
+    case AlterType::RENAME: {
+        return bindRenameTable(statement);
+    }
+    case AlterType::ADD_PROPERTY: {
+        return bindAddProperty(statement);
+    }
+    case AlterType::DROP_PROPERTY: {
+        return bindDropProperty(statement);
+    }
+    case AlterType::RENAME_PROPERTY: {
+        return bindRenameProperty(statement);
+    }
+    case AlterType::COMMENT: {
+        return bindCommentOn(statement);
+    }
+    case AlterType::SET_SORTED_BY: {
+        return bindSetSortedBy(statement);
+    }
+    case AlterType::ADD_FROM_TO_CONNECTION:
+    case AlterType::DROP_FROM_TO_CONNECTION: {
+        return bindAlterFromToConnection(statement);
+    }
+    default: {
+        UNREACHABLE_CODE;
+    }
+    }
+}
+
+std::unique_ptr<BoundStatement> Binder::bindRenameTable(const Statement& statement) const {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = dynamic_cast_checked<ExtraRenameTableInfo*>(info->extraInfo.get());
+    auto tableName = info->tableName;
+    auto newName = extraInfo->newName;
+    auto boundExtraInfo = std::make_unique<BoundExtraRenameTableInfo>(newName);
+    auto boundInfo =
+        BoundAlterInfo(AlterType::RENAME, tableName, std::move(boundExtraInfo), info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindAddProperty(const Statement& statement) {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = info->extraInfo->ptrCast<ExtraAddPropertyInfo>();
+    auto tableName = info->tableName;
+    auto propertyName = extraInfo->propertyName;
+    auto type = LogicalType::convertFromString(extraInfo->dataType, clientContext);
+    auto columnDefinition = ColumnDefinition(propertyName, type.copy());
+    auto defaultExpr =
+        resolvePropertyDefault(extraInfo->defaultValue.get(), type, tableName, propertyName);
+    auto boundDefault = expressionBinder.bindExpression(*defaultExpr);
+    boundDefault = expressionBinder.implicitCastIfNecessary(boundDefault, type);
+    if (ConstantExpressionVisitor::needFold(*boundDefault)) {
+        boundDefault = expressionBinder.foldExpression(boundDefault);
+    }
+    auto propertyDefinition =
+        PropertyDefinition(std::move(columnDefinition), std::move(defaultExpr));
+    auto boundExtraInfo = std::make_unique<BoundExtraAddPropertyInfo>(std::move(propertyDefinition),
+        std::move(boundDefault));
+    auto boundInfo = BoundAlterInfo(AlterType::ADD_PROPERTY, tableName, std::move(boundExtraInfo),
+        info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindDropProperty(const Statement& statement) const {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = info->extraInfo->constPtrCast<ExtraDropPropertyInfo>();
+    auto tableName = info->tableName;
+    auto propertyName = extraInfo->propertyName;
+    auto boundExtraInfo = std::make_unique<BoundExtraDropPropertyInfo>(propertyName);
+    auto boundInfo = BoundAlterInfo(AlterType::DROP_PROPERTY, tableName, std::move(boundExtraInfo),
+        info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindRenameProperty(const Statement& statement) const {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = info->extraInfo->constPtrCast<ExtraRenamePropertyInfo>();
+    auto tableName = info->tableName;
+    auto propertyName = extraInfo->propertyName;
+    auto newName = extraInfo->newName;
+    auto boundExtraInfo = std::make_unique<BoundExtraRenamePropertyInfo>(newName, propertyName);
+    auto boundInfo = BoundAlterInfo(AlterType::RENAME_PROPERTY, tableName,
+        std::move(boundExtraInfo), info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindCommentOn(const Statement& statement) const {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = info->extraInfo->constPtrCast<ExtraCommentInfo>();
+    auto tableName = info->tableName;
+    auto comment = extraInfo->comment;
+    auto boundExtraInfo = std::make_unique<BoundExtraCommentInfo>(comment);
+    auto boundInfo =
+        BoundAlterInfo(AlterType::COMMENT, tableName, std::move(boundExtraInfo), info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindSetSortedBy(const Statement& statement) const {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = info->extraInfo->constPtrCast<ExtraSetSortedByInfo>();
+    auto tableName = info->tableName;
+    auto catalog = Catalog::Get(*clientContext);
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    auto tableEntry = catalog->getTableCatalogEntry(transaction, tableName);
+    std::vector<BoundSortedByProperty> properties;
+    properties.reserve(extraInfo->properties.size());
+    if (tableEntry->getTableType() == common::TableType::REL) {
+        // Rel-table sorted-by is structural: the CSR adjacency lists must be
+        // sorted by (FROM ASC, TO ASC), where FROM and TO are the source and
+        // destination endpoints of the relation. They are reserved structural
+        // names — they are NOT rel properties, so they bypass
+        // validateColumnExistence. Only the CSR form is meaningful for rel
+        // tables (the non-CSR sorted-by is a node-table feature).
+        if (!extraInfo->csr) {
+            throw BinderException(
+                std::format("SORTED BY on rel table {} requires the CSR clause.", tableName));
+        }
+        if (extraInfo->properties.size() != 2 ||
+            !common::StringUtils::caseInsensitiveEquals(extraInfo->properties[0].propertyName,
+                "FROM") ||
+            !extraInfo->properties[0].ascending ||
+            !common::StringUtils::caseInsensitiveEquals(extraInfo->properties[1].propertyName,
+                "TO") ||
+            !extraInfo->properties[1].ascending) {
+            throw BinderException(std::format(
+                "CSR on rel table {} requires SORTED BY (FROM ASC, TO ASC).", tableName));
+        }
+        for (auto& property : extraInfo->properties) {
+            properties.push_back(BoundSortedByProperty{property.propertyName, property.ascending});
+        }
+    } else {
+        validateNodeTableType(tableEntry);
+        for (auto& property : extraInfo->properties) {
+            validateColumnExistence(tableEntry, property.propertyName);
+            properties.push_back(BoundSortedByProperty{property.propertyName, property.ascending});
+        }
+    }
+    auto boundExtraInfo =
+        std::make_unique<BoundExtraSetSortedByInfo>(std::move(properties), extraInfo->csr);
+    auto boundInfo = BoundAlterInfo(AlterType::SET_SORTED_BY, tableName, std::move(boundExtraInfo),
+        info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+std::unique_ptr<BoundStatement> Binder::bindAlterFromToConnection(
+    const Statement& statement) const {
+    auto& alter = statement.constCast<Alter>();
+    auto info = alter.getInfo();
+    auto extraInfo = info->extraInfo->constPtrCast<ExtraAddFromToConnection>();
+    auto tableName = info->tableName;
+    auto [srcTableEntry, srcDbName] = bindNodeTableEntry(extraInfo->srcTableName);
+    auto [dstTableEntry, dstDbName] = bindNodeTableEntry(extraInfo->dstTableName);
+    auto srcTableID = srcTableEntry->getTableID();
+    auto dstTableID = dstTableEntry->getTableID();
+    auto boundExtraInfo = std::make_unique<BoundExtraAlterFromToConnection>(srcTableID, dstTableID);
+    auto boundInfo =
+        BoundAlterInfo(info->type, tableName, std::move(boundExtraInfo), info->onConflict);
+    return std::make_unique<BoundAlter>(std::move(boundInfo));
+}
+
+} // namespace binder
+} // namespace lbug

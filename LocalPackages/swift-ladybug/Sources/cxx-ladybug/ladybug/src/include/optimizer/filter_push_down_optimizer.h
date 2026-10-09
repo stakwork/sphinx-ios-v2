@@ -1,0 +1,110 @@
+#pragma once
+
+#include "planner/operator/logical_plan.h"
+
+namespace lbug {
+namespace main {
+class ClientContext;
+}
+namespace planner {
+class CardinalityEstimator;
+} // namespace planner
+namespace optimizer {
+
+struct PrimaryKeyRangePredicate {
+    std::shared_ptr<binder::Expression> lowerBound;
+    std::shared_ptr<binder::Expression> upperBound;
+    bool lowerInclusive = true;
+    bool upperInclusive = true;
+
+    bool hasBound() const { return lowerBound != nullptr || upperBound != nullptr; }
+};
+
+struct PredicateSet {
+    binder::expression_vector equalityPredicates;
+    binder::expression_vector nonEqualityPredicates;
+
+    PredicateSet() = default;
+    EXPLICIT_COPY_DEFAULT_MOVE(PredicateSet);
+
+    bool isEmpty() const { return equalityPredicates.empty() && nonEqualityPredicates.empty(); }
+    void clear() {
+        equalityPredicates.clear();
+        nonEqualityPredicates.clear();
+    }
+
+    void addPredicate(std::shared_ptr<binder::Expression> predicate);
+    std::shared_ptr<binder::Expression> popNodePKEqualityComparison(
+        const binder::Expression& nodeID);
+    PrimaryKeyRangePredicate popNodePKRangeComparison(const binder::Expression& nodeID);
+    binder::expression_vector getAllPredicates();
+
+private:
+    PredicateSet(const PredicateSet& other)
+        : equalityPredicates{other.equalityPredicates},
+          nonEqualityPredicates{other.nonEqualityPredicates} {}
+};
+
+class FilterPushDownOptimizer {
+public:
+    explicit FilterPushDownOptimizer(main::ClientContext* context,
+        const planner::CardinalityEstimator* cardinalityEstimator)
+        : context{context}, cardinalityEstimator{cardinalityEstimator} {
+        predicateSet = PredicateSet();
+    }
+    explicit FilterPushDownOptimizer(main::ClientContext* context,
+        const planner::CardinalityEstimator* cardinalityEstimator, PredicateSet predicateSet)
+        : predicateSet{std::move(predicateSet)}, context{context},
+          cardinalityEstimator{cardinalityEstimator} {}
+
+    void rewrite(planner::LogicalPlan* plan);
+
+private:
+    std::shared_ptr<planner::LogicalOperator> visitOperator(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+    // Collect predicates in FILTER
+    std::shared_ptr<planner::LogicalOperator> visitFilterReplace(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+    // Push primary key lookup into CROSS_PRODUCT
+    // E.g.
+    //      Filter(a.ID=b.ID)
+    //      CrossProduct                   to                  HashJoin
+    //   S(a)           S(b)                            S(a)             S(b)
+    std::shared_ptr<planner::LogicalOperator> visitCrossProductReplace(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+
+    // Push FILTER into SCAN_NODE_TABLE, and turn index lookup into INDEX_SCAN.
+    std::shared_ptr<planner::LogicalOperator> visitScanNodeTableReplace(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+    // Push Filter into EXTEND.
+    std::shared_ptr<planner::LogicalOperator> visitExtendReplace(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+    // Push Filter into TABLE_FUNCTION_CALL
+    std::shared_ptr<planner::LogicalOperator> visitTableFunctionCallReplace(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+
+    // Finish the current push down optimization by apply remaining predicates as a single filter.
+    // And heuristically reorder equality predicates first in the filter.
+    std::shared_ptr<planner::LogicalOperator> finishPushDown(
+        std::shared_ptr<planner::LogicalOperator> op);
+    std::shared_ptr<planner::LogicalOperator> appendFilters(
+        const binder::expression_vector& predicates,
+        std::shared_ptr<planner::LogicalOperator> child);
+    std::shared_ptr<planner::LogicalOperator> appendFiltersStatsAware(
+        binder::expression_vector predicates, std::shared_ptr<planner::LogicalOperator> child);
+
+    std::shared_ptr<planner::LogicalOperator> appendFilter(
+        std::shared_ptr<binder::Expression> predicate,
+        std::shared_ptr<planner::LogicalOperator> child);
+
+    std::shared_ptr<planner::LogicalOperator> visitChildren(
+        const std::shared_ptr<planner::LogicalOperator>& op);
+
+private:
+    PredicateSet predicateSet;
+    main::ClientContext* context;
+    const planner::CardinalityEstimator* cardinalityEstimator;
+};
+
+} // namespace optimizer
+} // namespace lbug

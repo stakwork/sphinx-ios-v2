@@ -1,0 +1,27 @@
+#include "common/enums/table_type.h"
+
+#include "common/assert.h"
+
+namespace lbug {
+namespace common {
+
+std::string TableTypeUtils::toString(TableType tableType) {
+    switch (tableType) {
+    case TableType::UNKNOWN: {
+        return "UNKNOWN";
+    }
+    case TableType::NODE: {
+        return "NODE";
+    }
+    case TableType::REL: {
+        return "REL";
+    }
+    case TableType::FOREIGN: {
+        return "ATTACHED";
+    }
+    }
+    UNREACHABLE_CODE;
+}
+
+} // namespace common
+} // namespace lbug

@@ -1,0 +1,61 @@
+#include "binder/ddl/bound_alter_info.h"
+
+namespace lbug {
+namespace binder {
+
+std::string BoundAlterInfo::toString() const {
+    std::string result = "Operation: ";
+    switch (alterType) {
+    case common::AlterType::RENAME: {
+        auto renameInfo = common::dynamic_cast_checked<BoundExtraRenameTableInfo*>(extraInfo.get());
+        result += "Rename Table " + tableName + " to " + renameInfo->newName;
+        break;
+    }
+    case common::AlterType::ADD_PROPERTY: {
+        auto addPropInfo =
+            common::dynamic_cast_checked<BoundExtraAddPropertyInfo*>(extraInfo.get());
+        result +=
+            "Add Property " + addPropInfo->propertyDefinition.getName() + " to Table " + tableName;
+        break;
+    }
+    case common::AlterType::DROP_PROPERTY: {
+        auto dropPropInfo =
+            common::dynamic_cast_checked<BoundExtraDropPropertyInfo*>(extraInfo.get());
+        result += "Drop Property " + dropPropInfo->propertyName + " from Table " + tableName;
+        break;
+    }
+    case common::AlterType::RENAME_PROPERTY: {
+        auto renamePropInfo =
+            common::dynamic_cast_checked<BoundExtraRenamePropertyInfo*>(extraInfo.get());
+        result += "Rename Property " + renamePropInfo->oldName + " to " + renamePropInfo->newName +
+                  " in Table " + tableName;
+        break;
+    }
+    case common::AlterType::COMMENT: {
+        result += "Comment on Table " + tableName;
+        break;
+    }
+    case common::AlterType::SET_SORTED_BY: {
+        auto sortedByInfo =
+            common::dynamic_cast_checked<BoundExtraSetSortedByInfo*>(extraInfo.get());
+        result += "Set Table " + tableName + " Sorted By ";
+        for (auto i = 0u; i < sortedByInfo->properties.size(); ++i) {
+            if (i > 0) {
+                result += ", ";
+            }
+            auto& property = sortedByInfo->properties[i];
+            result += property.propertyName + (property.ascending ? " ASC" : " DESC");
+        }
+        if (sortedByInfo->csr) {
+            result += " CSR";
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    return result;
+}
+
+} // namespace binder
+} // namespace lbug

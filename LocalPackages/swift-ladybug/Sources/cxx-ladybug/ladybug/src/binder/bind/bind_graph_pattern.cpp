@@ -1,0 +1,1118 @@
+#include <mutex>
+#include <unordered_map>
+
+#include "binder/binder.h"
+#include "binder/expression/expression_util.h"
+#include "binder/expression/path_expression.h"
+#include "binder/expression/property_expression.h"
+#include "binder/expression_visitor.h"
+#include "catalog/catalog.h"
+#include "catalog/catalog_entry/node_table_catalog_entry.h"
+#include "catalog/catalog_entry/rel_group_catalog_entry.h"
+#include "catalog/schema_graph.h"
+#include "common/constants.h"
+#include "common/enums/rel_direction.h"
+#include "common/exception/binder.h"
+#include "common/partition_routing_hook.h"
+#include "common/types/types.h"
+#include "common/utils.h"
+#include "function/cast/functions/cast_from_string_functions.h"
+#include "function/gds/rec_joins.h"
+#include "function/rewrite_function.h"
+#include "function/schema/vector_node_rel_functions.h"
+#include "main/client_context.h"
+#include "main/database_manager.h"
+#include "transaction/transaction.h"
+#include <format>
+
+using namespace lbug::common;
+using namespace lbug::parser;
+using namespace lbug::catalog;
+
+namespace lbug {
+namespace binder {
+
+// Returns true only for attached native LBUG databases. Foreign attached databases
+// (sqlite/duckdb/postgres/...) must not participate in default-database or rel-context
+// resolution: rel tables referencing foreign node tables live in the main catalog and
+// unqualified names must keep resolving there.
+static bool isLbugDatabase(main::DatabaseManager* dbManager, const std::string& dbName) {
+    return dbManager->getAttachedDatabase(dbName)->getDBType() == ATTACHED_LBUG_DB_TYPE;
+}
+
+// A graph pattern contains node/rel and a set of key-value pairs associated with the variable. We
+// bind node/rel as query graph and key-value pairs as a separate collection. This collection is
+// interpreted in two different ways.
+//    - In MATCH clause, these are additional predicates to WHERE clause
+//    - In UPDATE clause, there are properties to set.
+// We do not store key-value pairs in query graph primarily because we will merge key-value
+// std::pairs with other predicates specified in WHERE clause.
+BoundGraphPattern Binder::bindGraphPattern(const std::vector<PatternElement>& graphPattern) {
+    auto queryGraphCollection = QueryGraphCollection();
+    for (auto& patternElement : graphPattern) {
+        queryGraphCollection.addAndMergeQueryGraphIfConnected(bindPatternElement(patternElement));
+    }
+    queryGraphCollection.finalize();
+    auto boundPattern = BoundGraphPattern();
+    boundPattern.queryGraphCollection = std::move(queryGraphCollection);
+    return boundPattern;
+}
+
+// Grammar ensures pattern element is always connected and thus can be bound as a query graph.
+QueryGraph Binder::bindPatternElement(const PatternElement& patternElement) {
+    auto queryGraph = QueryGraph();
+    expression_vector nodeAndRels;
+    auto leftNode = bindQueryNode(*patternElement.getFirstNodePattern(), queryGraph);
+    nodeAndRels.push_back(leftNode);
+    for (auto i = 0u; i < patternElement.getNumPatternElementChains(); ++i) {
+        auto patternElementChain = patternElement.getPatternElementChain(i);
+        auto rightNode = bindQueryNode(*patternElementChain->getNodePattern(), queryGraph);
+        auto rel =
+            bindQueryRel(*patternElementChain->getRelPattern(), leftNode, rightNode, queryGraph);
+        nodeAndRels.push_back(rel);
+        nodeAndRels.push_back(rightNode);
+        leftNode = rightNode;
+    }
+    if (patternElement.hasPathName()) {
+        auto pathName = patternElement.getPathName();
+        auto pathExpression = createPath(pathName, nodeAndRels);
+        addToScope(pathName, pathExpression);
+    }
+    return queryGraph;
+}
+
+static LogicalType getRecursiveRelLogicalType(const LogicalType& nodeType,
+    const LogicalType& relType) {
+    auto nodesType = LogicalType::LIST(nodeType.copy());
+    auto relsType = LogicalType::LIST(relType.copy());
+    std::vector<StructField> recursiveRelFields;
+    recursiveRelFields.emplace_back(InternalKeyword::NODES, std::move(nodesType));
+    recursiveRelFields.emplace_back(InternalKeyword::RELS, std::move(relsType));
+    return LogicalType::RECURSIVE_REL(std::move(recursiveRelFields));
+}
+
+static void extraFieldFromStructType(const LogicalType& structType,
+    std::unordered_set<std::string>& set, std::vector<StructField>& structFields) {
+    for (auto& field : StructType::getFields(structType)) {
+        if (!set.contains(field.getName())) {
+            set.insert(field.getName());
+            structFields.emplace_back(field.getName(), field.getType().copy());
+        }
+    }
+}
+
+std::shared_ptr<Expression> Binder::createPath(const std::string& pathName,
+    const expression_vector& children) {
+    std::unordered_set<std::string> nodeFieldNameSet;
+    std::vector<StructField> nodeFields;
+    std::unordered_set<std::string> relFieldNameSet;
+    std::vector<StructField> relFields;
+    for (auto& child : children) {
+        if (ExpressionUtil::isNodePattern(*child)) {
+            auto& node = child->constCast<NodeExpression>();
+            extraFieldFromStructType(node.getDataType(), nodeFieldNameSet, nodeFields);
+        } else if (ExpressionUtil::isRelPattern(*child)) {
+            auto rel = dynamic_cast_checked<RelExpression*>(child.get());
+            extraFieldFromStructType(rel->getDataType(), relFieldNameSet, relFields);
+        } else if (ExpressionUtil::isRecursiveRelPattern(*child)) {
+            auto recursiveRel = dynamic_cast_checked<RelExpression*>(child.get());
+            auto recursiveInfo = recursiveRel->getRecursiveInfo();
+            extraFieldFromStructType(recursiveInfo->node->getDataType(), nodeFieldNameSet,
+                nodeFields);
+            extraFieldFromStructType(recursiveInfo->rel->getDataType(), relFieldNameSet, relFields);
+        } else {
+            UNREACHABLE_CODE;
+        }
+    }
+    auto nodeType = LogicalType::NODE(std::move(nodeFields));
+    auto relType = LogicalType::REL(std::move(relFields));
+    auto uniqueName = getUniqueExpressionName(pathName);
+    return std::make_shared<PathExpression>(getRecursiveRelLogicalType(nodeType, relType),
+        uniqueName, pathName, std::move(nodeType), std::move(relType), children);
+}
+
+static std::vector<std::string> getPropertyNames(const std::vector<TableCatalogEntry*>& entries) {
+    std::vector<std::string> result;
+    case_insensitve_set_t propertyNamesSet;
+    for (auto& entry : entries) {
+        for (auto& property : entry->getProperties()) {
+            if (propertyNamesSet.contains(property.getName())) {
+                continue;
+            }
+            propertyNamesSet.insert(property.getName());
+            result.push_back(property.getName());
+        }
+    }
+    return result;
+}
+
+static std::shared_ptr<PropertyExpression> createPropertyExpression(const std::string& propertyName,
+    const std::string& uniqueVariableName, const std::string& rawVariableName,
+    const std::vector<TableCatalogEntry*>& entries) {
+    table_id_map_t<SingleLabelPropertyInfo> infos;
+    std::vector<LogicalType> dataTypes;
+    for (auto& entry : entries) {
+        bool exists = false;
+        if (entry->containsProperty(propertyName)) {
+            exists = true;
+            dataTypes.push_back(entry->getProperty(propertyName).getType().copy());
+        }
+        // Bind isPrimaryKey
+        auto isPrimaryKey = false;
+        if (entry->getTableType() == TableType::NODE) {
+            auto nodeEntry = entry->constPtrCast<NodeTableCatalogEntry>();
+            isPrimaryKey = nodeEntry->getPrimaryKeyName() == propertyName;
+        }
+        auto info = SingleLabelPropertyInfo(exists, isPrimaryKey);
+        infos.insert({entry->getTableID(), std::move(info)});
+    }
+    LogicalType maxType = LogicalTypeUtils::combineTypes(dataTypes);
+    return std::make_shared<PropertyExpression>(std::move(maxType), propertyName,
+        uniqueVariableName, rawVariableName, std::move(infos));
+}
+
+static void checkRelDirectionTypeAgainstStorageDirection(const RelExpression* rel) {
+    switch (rel->getDirectionType()) {
+    case RelDirectionType::SINGLE:
+        // Directed pattern is in the fwd direction
+        if (!containsValue(rel->getExtendDirections(), ExtendDirection::FWD)) {
+            throw BinderException(std::format("Querying table matched in rel pattern '{}' with "
+                                              "bwd-only storage direction isn't supported.",
+                rel->toString()));
+        }
+        break;
+    case RelDirectionType::BOTH:
+        if (rel->getExtendDirections().size() < NUM_REL_DIRECTIONS) {
+            throw BinderException(
+                std::format("Undirected rel pattern '{}' has at least one matched rel table with "
+                            "storage type 'fwd' or 'bwd'. Undirected rel patterns are only "
+                            "supported if every matched rel table has storage type 'both'.",
+                    rel->toString()));
+        }
+        break;
+    default:
+        UNREACHABLE_CODE;
+    }
+}
+
+std::shared_ptr<RelExpression> Binder::bindQueryRel(const RelPattern& relPattern,
+    const std::shared_ptr<NodeExpression>& leftNode,
+    const std::shared_ptr<NodeExpression>& rightNode, QueryGraph& queryGraph) {
+    auto parsedName = relPattern.getVariableName();
+    if (scope.contains(parsedName)) {
+        auto prevVariable = scope.getExpression(parsedName);
+        auto expectedDataType = QueryRelTypeUtils::isRecursive(relPattern.getRelType()) ?
+                                    LogicalTypeID::RECURSIVE_REL :
+                                    LogicalTypeID::REL;
+        ExpressionUtil::validateDataType(*prevVariable, expectedDataType);
+        throw BinderException("Bind relationship " + parsedName +
+                              " to relationship with same name is not supported.");
+    }
+    // Infer the catalog context from the endpoint nodes: if every endpoint table belongs
+    // to the same single attached LBUG database, unqualified rel labels (and anonymous rel
+    // patterns) resolve in that database's catalog. Main and foreign endpoint tables
+    // (sqlite/duckdb/postgres) invalidate the context: rel tables referencing foreign node
+    // tables (e.g. a main-catalog rel table over attached foreign nodes) must still resolve
+    // in the default catalog.
+    auto dbManager = main::DatabaseManager::Get(*clientContext);
+    std::string contextDbName;
+    bool invalidContext = false;
+    for (auto* node : {leftNode.get(), rightNode.get()}) {
+        for (auto* entry : node->getEntries()) {
+            auto dbName = node->getDbName(entry);
+            if (dbName.empty() || !isLbugDatabase(dbManager, dbName)) {
+                invalidContext = true;
+            } else if (contextDbName.empty()) {
+                contextDbName = dbName;
+            } else if (contextDbName != dbName) {
+                invalidContext = true;
+            }
+        }
+    }
+    if (invalidContext || contextDbName.empty()) {
+        contextDbName.clear();
+    }
+    auto [entries, dbNames] = bindRelGroupEntries(relPattern.getTableNames(), contextDbName);
+    // bind src & dst node
+    RelDirectionType directionType = RelDirectionType::UNKNOWN;
+    std::shared_ptr<NodeExpression> srcNode;
+    std::shared_ptr<NodeExpression> dstNode;
+    switch (relPattern.getDirection()) {
+    case ArrowDirection::LEFT: {
+        srcNode = rightNode;
+        dstNode = leftNode;
+        directionType = RelDirectionType::SINGLE;
+    } break;
+    case ArrowDirection::RIGHT: {
+        srcNode = leftNode;
+        dstNode = rightNode;
+        directionType = RelDirectionType::SINGLE;
+    } break;
+    case ArrowDirection::BOTH: {
+        // For both direction, left and right will be written with the same label set. So either one
+        // being src will be correct.
+        srcNode = leftNode;
+        dstNode = rightNode;
+        directionType = RelDirectionType::BOTH;
+    } break;
+    default:
+        UNREACHABLE_CODE;
+    }
+    // bind variable length
+    std::shared_ptr<RelExpression> queryRel;
+    if (QueryRelTypeUtils::isRecursive(relPattern.getRelType())) {
+        queryRel =
+            createRecursiveQueryRel(relPattern, entries, dbNames, srcNode, dstNode, directionType);
+    } else {
+        queryRel = createNonRecursiveQueryRel(relPattern.getVariableName(), entries, srcNode,
+            dstNode, directionType, relPattern.getTableNames());
+        for (auto& [propertyName, rhs] : relPattern.getPropertyKeyVals()) {
+            auto boundLhs =
+                expressionBinder.bindNodeOrRelPropertyExpression(*queryRel, propertyName);
+            auto boundRhs = expressionBinder.bindExpression(*rhs);
+            boundRhs = expressionBinder.implicitCastIfNecessary(boundRhs, boundLhs->dataType);
+            queryRel->addPropertyDataExpr(propertyName, std::move(boundRhs));
+        }
+    }
+    queryRel->setLeftNode(leftNode);
+    queryRel->setRightNode(rightNode);
+    queryRel->setAlias(parsedName);
+    // Carry the database context for each rel entry so planning/physical routing
+    // (cardinality estimation, extend scan) can resolve the right storage manager.
+    for (auto& [entry, dbName] : dbNames) {
+        queryRel->setDbName(entry, dbName);
+    }
+    if (!parsedName.empty()) {
+        addToScope(parsedName, queryRel);
+    }
+    queryGraph.addQueryRel(queryRel);
+    checkRelDirectionTypeAgainstStorageDirection(queryRel.get());
+    return queryRel;
+}
+
+static std::vector<StructField> getBaseNodeStructFields() {
+    std::vector<StructField> fields;
+    fields.emplace_back(InternalKeyword::ID, LogicalType::INTERNAL_ID());
+    fields.emplace_back(InternalKeyword::LABEL, LogicalType::STRING());
+    return fields;
+}
+
+static std::vector<StructField> getBaseRelStructFields() {
+    std::vector<StructField> fields;
+    fields.emplace_back(InternalKeyword::SRC, LogicalType::INTERNAL_ID());
+    fields.emplace_back(InternalKeyword::DST, LogicalType::INTERNAL_ID());
+    fields.emplace_back(InternalKeyword::LABEL, LogicalType::STRING());
+    return fields;
+}
+
+// Full node/rel struct type: the base fields followed by the properties surfaced in whole-object
+// (`RETURN n`) output. Properties hidden from the struct are excluded here so the struct fields
+// stay aligned with the child expressions built in ExpressionMapper.
+static std::vector<StructField> getNodeStructFields(const NodeExpression& node,
+    LogicalType labelType) {
+    std::vector<StructField> fields;
+    fields.emplace_back(InternalKeyword::ID, LogicalType::INTERNAL_ID());
+    fields.emplace_back(InternalKeyword::LABEL, std::move(labelType));
+    for (auto& property : node.getProjectedPropertyExpressions()) {
+        fields.emplace_back(property->getPropertyName(), property->getDataType().copy());
+    }
+    return fields;
+}
+
+static std::vector<StructField> getRelStructFields(const RelExpression& rel) {
+    auto fields = getBaseRelStructFields();
+    for (auto& property : rel.getProjectedPropertyExpressions()) {
+        fields.emplace_back(property->getPropertyName(), property->getDataType().copy());
+    }
+    return fields;
+}
+
+static std::shared_ptr<PropertyExpression> construct(LogicalType type,
+    const std::string& propertyName, const Expression& child) {
+    DASSERT(child.expressionType == ExpressionType::PATTERN);
+    auto& patternExpr = child.constCast<NodeOrRelExpression>();
+    auto variableName = patternExpr.getVariableName();
+    auto uniqueName = patternExpr.getUniqueName();
+    // Assign an invalid property id for virtual property.
+    table_id_map_t<SingleLabelPropertyInfo> infos;
+    for (auto& entry : patternExpr.getEntries()) {
+        infos.insert({entry->getTableID(),
+            SingleLabelPropertyInfo(false /* exists */, false /* isPrimaryKey */)});
+    }
+    return std::make_unique<PropertyExpression>(std::move(type), propertyName, uniqueName,
+        variableName, std::move(infos));
+}
+
+std::shared_ptr<RelExpression> Binder::createNonRecursiveQueryRel(const std::string& parsedName,
+    const std::vector<TableCatalogEntry*>& entries, std::shared_ptr<NodeExpression> srcNode,
+    std::shared_ptr<NodeExpression> dstNode, RelDirectionType directionType,
+    const std::vector<std::string>& originalLabels) {
+    auto uniqueName = getUniqueExpressionName(parsedName);
+    // Bind properties. As with createQueryNode, defer the struct type until we know whether this
+    // is an ANY graph, so start from the base fields and set the full struct type afterwards.
+    std::vector<std::shared_ptr<PropertyExpression>> propertyExpressions;
+    if (!entries.empty()) {
+        for (auto& propertyName : getPropertyNames(entries)) {
+            propertyExpressions.push_back(
+                createPropertyExpression(propertyName, uniqueName, parsedName, entries));
+        }
+    }
+    auto queryRel = std::make_shared<RelExpression>(LogicalType::REL(getBaseRelStructFields()),
+        uniqueName, parsedName, entries, std::move(srcNode), std::move(dstNode), directionType,
+        QueryRelType::NON_RECURSIVE);
+    queryRel->setAlias(parsedName);
+    // Keep every property bound (the insert path looks columns up by name); internal columns are
+    // hidden from projection below, not dropped here.
+    if (entries.empty()) {
+        queryRel->addPropertyExpression(
+            construct(LogicalType::INTERNAL_ID(), InternalKeyword::ID, *queryRel));
+    } else {
+        for (auto& property : propertyExpressions) {
+            queryRel->addPropertyExpression(property);
+        }
+    }
+    // Bind internal expressions.
+    if (directionType == RelDirectionType::BOTH) {
+        queryRel->setDirectionExpr(expressionBinder.createVariableExpression(LogicalType::BOOL(),
+            queryRel->getUniqueName() + InternalKeyword::DIRECTION));
+    }
+    if (!entries.empty() && isAnyGraphNodeOrRel(*queryRel, clientContext) &&
+        queryRel->hasPropertyExpression("label")) {
+        // ANY graph. Rels are backed by the internal `_edges` table, whose `label` column is
+        // surfaced as _LABEL (see DatabaseManager::createGraph), so hide the redundant column from
+        // projection. A rel has a single type, so _LABEL stays scalar STRING. `_id` and `data`
+        // (the JSON property bag) stay.
+        queryRel->setHiddenPropertyNames({"label"});
+        queryRel->setDataType(LogicalType::REL(getRelStructFields(*queryRel)));
+        queryRel->setLabelExpression(queryRel->getPropertyExpression("label"));
+    } else {
+        // Structured graph. Every column is user-facing, and _LABEL is resolved by the rewrite.
+        queryRel->setDataType(LogicalType::REL(getRelStructFields(*queryRel)));
+        auto input =
+            function::RewriteFunctionBindInput(clientContext, &expressionBinder, {queryRel});
+        queryRel->setLabelExpression(function::LabelFunction::rewriteFunc(input));
+    }
+    // Store original labels for ANY graphs
+    if (!originalLabels.empty()) {
+        queryRel->setOriginalLabels(originalLabels);
+    }
+    return queryRel;
+}
+
+static void bindProjectionListAsStructField(const expression_vector& projectionList,
+    std::vector<StructField>& fields) {
+    for (auto& expression : projectionList) {
+        if (expression->expressionType != ExpressionType::PROPERTY) {
+            throw BinderException(std::format("Unsupported projection item {} on recursive rel.",
+                expression->toString()));
+        }
+        auto& property = expression->constCast<PropertyExpression>();
+        fields.emplace_back(property.getPropertyName(), property.getDataType().copy());
+    }
+}
+
+static void checkWeightedShortestPathSupportedType(const LogicalType& type) {
+    switch (type.getLogicalTypeID()) {
+    case LogicalTypeID::INT8:
+    case LogicalTypeID::UINT8:
+    case LogicalTypeID::INT16:
+    case LogicalTypeID::UINT16:
+    case LogicalTypeID::INT32:
+    case LogicalTypeID::UINT32:
+    case LogicalTypeID::INT64:
+    case LogicalTypeID::UINT64:
+    case LogicalTypeID::DOUBLE:
+    case LogicalTypeID::FLOAT:
+        return;
+    default:
+        break;
+    }
+    throw BinderException(std::format("{} weight type is not supported for weighted shortest path.",
+        type.toString()));
+}
+
+std::shared_ptr<RelExpression> Binder::createRecursiveQueryRel(const parser::RelPattern& relPattern,
+    const std::vector<TableCatalogEntry*>& entries,
+    const std::unordered_map<TableCatalogEntry*, std::string>& dbNames,
+    std::shared_ptr<NodeExpression> srcNode, std::shared_ptr<NodeExpression> dstNode,
+    RelDirectionType directionType) {
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    table_catalog_entry_set_t nodeEntrySet;
+    std::unordered_map<TableCatalogEntry*, std::string> nodeDbNames;
+    for (auto entry : entries) {
+        auto& relGroupEntry = entry->constCast<RelGroupCatalogEntry>();
+        // Resolve the catalog that owns this rel entry so its endpoint node tables are
+        // looked up in the right database (IDs are 0-based per database).
+        auto dbNameIt = dbNames.find(entry);
+        auto dbName = dbNameIt != dbNames.end() ? dbNameIt->second : "";
+        auto catalog = dbName.empty() ? Catalog::Get(*clientContext) :
+                                        main::DatabaseManager::Get(*clientContext)
+                                            ->getAttachedDatabase(dbName)
+                                            ->getCatalog();
+        for (auto id : relGroupEntry.getSrcNodeTableIDSet()) {
+            auto nodeEntry = catalog->getTableCatalogEntry(transaction, id);
+            nodeEntrySet.insert(nodeEntry);
+            if (!dbName.empty()) {
+                nodeDbNames[nodeEntry] = dbName;
+            }
+        }
+        for (auto id : relGroupEntry.getDstNodeTableIDSet()) {
+            auto nodeEntry = catalog->getTableCatalogEntry(transaction, id);
+            nodeEntrySet.insert(nodeEntry);
+            if (!dbName.empty()) {
+                nodeDbNames[nodeEntry] = dbName;
+            }
+        }
+    }
+    auto nodeEntries = std::vector<TableCatalogEntry*>{nodeEntrySet.begin(), nodeEntrySet.end()};
+    auto recursivePatternInfo = relPattern.getRecursiveInfo();
+    auto prevScope = saveScope();
+    scope.clear();
+    // Bind intermediate node.
+    auto node = createQueryNode(recursivePatternInfo->nodeName, nodeEntries, nodeDbNames, {});
+    addToScope(node->toString(), node);
+    auto nodeFields = getBaseNodeStructFields();
+    auto nodeProjectionList = bindRecursivePatternNodeProjectionList(*recursivePatternInfo, *node);
+    bindProjectionListAsStructField(nodeProjectionList, nodeFields);
+    node->setDataType(LogicalType::NODE(std::move(nodeFields)));
+    auto nodeCopy = createQueryNode(recursivePatternInfo->nodeName, nodeEntries, nodeDbNames, {});
+    // Bind intermediate rel
+    auto rel = createNonRecursiveQueryRel(recursivePatternInfo->relName, entries,
+        nullptr /* srcNode */, nullptr /* dstNode */, directionType, {});
+    addToScope(rel->toString(), rel);
+    auto relProjectionList = bindRecursivePatternRelProjectionList(*recursivePatternInfo, *rel);
+    auto relFields = getBaseRelStructFields();
+    relFields.emplace_back(InternalKeyword::ID, LogicalType::INTERNAL_ID());
+    bindProjectionListAsStructField(relProjectionList, relFields);
+    rel->setDataType(LogicalType::REL(std::move(relFields)));
+    // Bind predicates in {}, e.g. [e* {date=1999-01-01}]
+    std::shared_ptr<Expression> relPredicate = nullptr;
+    for (auto& [propertyName, rhs] : relPattern.getPropertyKeyVals()) {
+        auto boundLhs = expressionBinder.bindNodeOrRelPropertyExpression(*rel, propertyName);
+        auto boundRhs = expressionBinder.bindExpression(*rhs);
+        boundRhs = expressionBinder.implicitCastIfNecessary(boundRhs, boundLhs->dataType);
+        auto predicate = expressionBinder.createEqualityComparisonExpression(boundLhs, boundRhs);
+        relPredicate = expressionBinder.combineBooleanExpressions(ExpressionType::AND, relPredicate,
+            predicate);
+    }
+    // Bind predicates in (r, n | WHERE )
+    bool emptyRecursivePattern = false;
+    std::shared_ptr<Expression> nodePredicate = nullptr;
+    if (recursivePatternInfo->whereExpression != nullptr) {
+        expressionBinder.config.disableLabelFunctionLiteralRewrite = true;
+        auto wherePredicate = bindWhereExpression(*recursivePatternInfo->whereExpression);
+        expressionBinder.config.disableLabelFunctionLiteralRewrite = false;
+        for (auto& predicate : wherePredicate->splitOnAND()) {
+            auto collector = DependentVarNameCollector();
+            collector.visit(predicate);
+            auto dependentVariableNames = collector.getVarNames();
+            auto dependOnNode = dependentVariableNames.contains(node->getUniqueName());
+            auto dependOnRel = dependentVariableNames.contains(rel->getUniqueName());
+            if (dependOnNode && dependOnRel) {
+                throw BinderException(
+                    std::format("Cannot evaluate {} because it depends on both {} and {}.",
+                        predicate->toString(), node->toString(), rel->toString()));
+            } else if (dependOnNode) {
+                nodePredicate = expressionBinder.combineBooleanExpressions(ExpressionType::AND,
+                    nodePredicate, predicate);
+            } else if (dependOnRel) {
+                relPredicate = expressionBinder.combineBooleanExpressions(ExpressionType::AND,
+                    relPredicate, predicate);
+            } else {
+                if (!ExpressionUtil::isBoolLiteral(*predicate)) {
+                    throw BinderException(std::format(
+                        "Cannot evaluate {} because it does not depend on {} or {}. Treating it as "
+                        "a node or relationship predicate is ambiguous.",
+                        predicate->toString(), node->toString(), rel->toString()));
+                }
+                // If predicate is true literal, we ignore.
+                // If predicate is false literal, we mark this recursive relationship as empty
+                // and later in planner we replace it with EmptyResult.
+                if (!ExpressionUtil::getLiteralValue<bool>(*predicate)) {
+                    emptyRecursivePattern = true;
+                }
+            }
+        }
+    }
+    // Bind rel
+    restoreScope(std::move(prevScope));
+    auto parsedName = relPattern.getVariableName();
+    auto prunedRelEntries = entries;
+    if (emptyRecursivePattern) {
+        prunedRelEntries.clear();
+    }
+    auto queryRel = std::make_shared<RelExpression>(
+        getRecursiveRelLogicalType(node->getDataType(), rel->getDataType()),
+        getUniqueExpressionName(parsedName), parsedName, prunedRelEntries, std::move(srcNode),
+        std::move(dstNode), directionType, relPattern.getRelType());
+    // Bind graph entry.
+    auto graphEntry = graph::NativeGraphEntry();
+    for (auto nodeEntry : node->getEntries()) {
+        graphEntry.nodeInfos.emplace_back(nodeEntry);
+    }
+    for (auto relEntry : rel->getEntries()) {
+        graphEntry.relInfos.emplace_back(relEntry, rel, relPredicate);
+    }
+    auto bindData = std::make_unique<function::RJBindData>(graphEntry.copy());
+    // Bind lower upper bound.
+    auto [lowerBound, upperBound] = bindVariableLengthRelBound(relPattern);
+    bindData->lowerBound = lowerBound;
+    bindData->upperBound = upperBound;
+    // Bind semantic.
+    bindData->semantic = QueryRelTypeUtils::getPathSemantic(queryRel->getRelType());
+    // Bind path related expressions.
+    bindData->lengthExpr = construct(LogicalType::INT64(), InternalKeyword::LENGTH, *queryRel);
+    bindData->pathNodeIDsExpr =
+        createInvisibleVariable("pathNodeIDs", LogicalType::LIST(LogicalType::INTERNAL_ID()));
+    bindData->pathEdgeIDsExpr =
+        createInvisibleVariable("pathEdgeIDs", LogicalType::LIST(LogicalType::INTERNAL_ID()));
+    if (queryRel->getDirectionType() == RelDirectionType::BOTH) {
+        bindData->directionExpr =
+            createInvisibleVariable("pathEdgeDirections", LogicalType::LIST(LogicalType::BOOL()));
+    }
+    // Bind weighted path related expressions.
+    if (QueryRelTypeUtils::isWeighted(queryRel->getRelType())) {
+        auto propertyExpr = expressionBinder.bindNodeOrRelPropertyExpression(*rel,
+            recursivePatternInfo->weightPropertyName);
+        checkWeightedShortestPathSupportedType(propertyExpr->getDataType());
+        bindData->weightPropertyExpr = propertyExpr;
+        bindData->weightOutputExpr =
+            createInvisibleVariable(parsedName + "_cost", LogicalType::DOUBLE());
+    }
+
+    auto recursiveInfo = std::make_unique<RecursiveInfo>();
+    recursiveInfo->node = node;
+    recursiveInfo->nodeCopy = nodeCopy;
+    recursiveInfo->rel = rel;
+    recursiveInfo->nodePredicate = std::move(nodePredicate);
+    recursiveInfo->relPredicate = std::move(relPredicate);
+    recursiveInfo->nodeProjectionList = std::move(nodeProjectionList);
+    recursiveInfo->relProjectionList = std::move(relProjectionList);
+    recursiveInfo->function = QueryRelTypeUtils::getFunction(queryRel->getRelType());
+    recursiveInfo->bindData = std::move(bindData);
+    queryRel->setRecursiveInfo(std::move(recursiveInfo));
+    return queryRel;
+}
+
+expression_vector Binder::bindRecursivePatternNodeProjectionList(
+    const RecursiveRelPatternInfo& info, const NodeOrRelExpression& expr) {
+    expression_vector result;
+    if (!info.hasProjection) {
+        for (auto& expression : expr.getPropertyExpressions()) {
+            result.push_back(expression);
+        }
+    } else {
+        for (auto& expression : info.nodeProjectionList) {
+            result.push_back(expressionBinder.bindExpression(*expression));
+        }
+    }
+    return result;
+}
+
+expression_vector Binder::bindRecursivePatternRelProjectionList(const RecursiveRelPatternInfo& info,
+    const NodeOrRelExpression& expr) {
+    expression_vector result;
+    if (!info.hasProjection) {
+        for (auto& property : expr.getPropertyExpressions()) {
+            if (property->isInternalID()) {
+                continue;
+            }
+            result.push_back(property);
+        }
+    } else {
+        for (auto& expression : info.relProjectionList) {
+            result.push_back(expressionBinder.bindExpression(*expression));
+        }
+    }
+    return result;
+}
+
+std::pair<uint64_t, uint64_t> Binder::bindVariableLengthRelBound(const RelPattern& relPattern) {
+    auto recursiveInfo = relPattern.getRecursiveInfo();
+    uint32_t lowerBound = 0;
+    function::CastString::operation(
+        string_t{recursiveInfo->lowerBound.c_str(), recursiveInfo->lowerBound.length()},
+        lowerBound);
+    auto maxDepth = clientContext->getClientConfig()->varLengthMaxDepth;
+    auto upperBound = maxDepth;
+    if (!recursiveInfo->upperBound.empty()) {
+        function::CastString::operation(
+            string_t{recursiveInfo->upperBound.c_str(), recursiveInfo->upperBound.length()},
+            upperBound);
+    }
+    if (lowerBound > upperBound) {
+        throw BinderException(std::format("Lower bound of rel {} is greater than upperBound.",
+            relPattern.getVariableName()));
+    }
+    if (upperBound > maxDepth) {
+        throw BinderException(std::format("Upper bound of rel {} exceeds maximum: {}.",
+            relPattern.getVariableName(), std::to_string(maxDepth)));
+    }
+    if ((relPattern.getRelType() == QueryRelType::ALL_SHORTEST ||
+            relPattern.getRelType() == QueryRelType::SHORTEST) &&
+        lowerBound != 1) {
+        throw BinderException("Lower bound of shortest/all_shortest path must be 1.");
+    }
+    return std::make_pair(lowerBound, upperBound);
+}
+
+std::shared_ptr<NodeExpression> Binder::bindQueryNode(const NodePattern& nodePattern,
+    QueryGraph& queryGraph) {
+    auto parsedName = nodePattern.getVariableName();
+    std::shared_ptr<NodeExpression> queryNode;
+    if (scope.contains(parsedName)) { // bind to node in scope
+        auto prevVariable = scope.getExpression(parsedName);
+        if (!ExpressionUtil::isNodePattern(*prevVariable)) {
+            if (!scope.hasNodeReplacement(parsedName)) {
+                throw BinderException(std::format("Cannot bind {} as node pattern.", parsedName));
+            }
+            queryNode = scope.getNodeReplacement(parsedName);
+            queryNode->addPropertyDataExpr(InternalKeyword::ID, queryNode->getInternalID());
+        } else {
+            queryNode = std::static_pointer_cast<NodeExpression>(prevVariable);
+            // E.g. MATCH (a:person) MATCH (a:organisation)
+            // We bind to a single node with both labels
+            if (!nodePattern.getTableNames().empty()) {
+                auto otherNodeEntries = bindNodeTableEntries(nodePattern.getTableNames());
+                // If the existing node was created from a wildcard pattern (no explicit
+                // labels), replace its entries with the explicit label constraint instead
+                // of adding. This ensures that reordering comma-separated patterns does
+                // not cause explicit label constraints to be ignored (github issue #696).
+                // E.g. MATCH (n1), (n1:L2) should restrict n1 to L2, not keep all tables.
+                if (queryNode->getOriginalLabels().empty()) {
+                    queryNode->setEntries(otherNodeEntries.first);
+                } else {
+                    queryNode->addEntries(otherNodeEntries.first);
+                }
+            }
+        }
+    } else {
+        queryNode = createQueryNode(nodePattern);
+        if (!parsedName.empty()) {
+            addToScope(parsedName, queryNode);
+        }
+    }
+    for (auto& [propertyName, rhs] : nodePattern.getPropertyKeyVals()) {
+        auto boundLhs = expressionBinder.bindNodeOrRelPropertyExpression(*queryNode, propertyName);
+        auto boundRhs = expressionBinder.bindExpression(*rhs);
+        // For ANY graphs, properties are stored as JSON in the data column
+        // Skip forceCast for ANY type as it cannot be cast to
+        if (boundLhs->dataType.getLogicalTypeID() != LogicalTypeID::ANY) {
+            boundRhs = expressionBinder.forceCast(boundRhs, boundLhs->dataType);
+        }
+        queryNode->addPropertyDataExpr(propertyName, std::move(boundRhs));
+    }
+    queryGraph.addQueryNode(queryNode);
+    return queryNode;
+}
+
+std::shared_ptr<NodeExpression> Binder::createQueryNode(const NodePattern& nodePattern) {
+    auto parsedName = nodePattern.getVariableName();
+    auto [entries, dbNames] = bindNodeTableEntries(nodePattern.getTableNames());
+    // Store original labels before they might be replaced by _nodes for ANY graphs
+    std::vector<std::string> originalLabels = nodePattern.getTableNames();
+    auto node = createQueryNode(parsedName, entries, dbNames, originalLabels);
+    return node;
+}
+
+std::shared_ptr<NodeExpression> Binder::createQueryNode(const std::string& parsedName,
+    const std::vector<TableCatalogEntry*>& entries,
+    const std::unordered_map<TableCatalogEntry*, std::string>& dbNames,
+    const std::vector<std::string>& originalLabels) {
+    auto uniqueName = getUniqueExpressionName(parsedName);
+    // Bind properties. The struct type is finalized below, once we know whether this is an ANY
+    // graph (whose internal columns are hidden from projection), so start the node from just the
+    // base fields and set the full struct type afterwards.
+    std::vector<std::shared_ptr<PropertyExpression>> propertyExpressions;
+    for (auto& propertyName : getPropertyNames(entries)) {
+        propertyExpressions.push_back(
+            createPropertyExpression(propertyName, uniqueName, parsedName, entries));
+    }
+    auto queryNode = std::make_shared<NodeExpression>(LogicalType::NODE(getBaseNodeStructFields()),
+        uniqueName, parsedName, entries);
+    queryNode->setAlias(parsedName);
+    // Keep every property bound: the insert path and explicit `n.prop` access rely on the full
+    // set. Internal columns are hidden from projection (below), not dropped here.
+    for (auto& property : propertyExpressions) {
+        queryNode->addPropertyExpression(property);
+    }
+    for (auto& [entry, dbName] : dbNames) {
+        queryNode->setDbName(entry, dbName);
+    }
+    // Store original labels for ANY graphs
+    if (!originalLabels.empty()) {
+        queryNode->setOriginalLabels(originalLabels);
+    }
+    // Bind internal expressions
+    queryNode->setInternalID(
+        construct(LogicalType::INTERNAL_ID(), InternalKeyword::ID, *queryNode));
+    if (isAnyGraphNodeOrRel(*queryNode, clientContext) &&
+        queryNode->hasPropertyExpression("label")) {
+        // ANY graph. Nodes are backed by the internal `_nodes` table whose `id`/`label`/`data`
+        // columns are implementation detail (see DatabaseManager::createGraph): `id` duplicates
+        // _ID and `label` is surfaced as _LABEL, so hide both from projection. A node carries a
+        // *set* of labels, hence STRING[]. `data` (the JSON property bag) stays.
+        queryNode->setHiddenPropertyNames({"id", "label"});
+        queryNode->setDataType(LogicalType::NODE(
+            getNodeStructFields(*queryNode, LogicalType::LIST(LogicalType::STRING()))));
+        queryNode->setLabelExpression(queryNode->getPropertyExpression("label"));
+    } else {
+        // Structured graph. Every column is user-facing, and _LABEL is the single table name
+        // resolved by the rewrite (scalar STRING).
+        queryNode->setDataType(
+            LogicalType::NODE(getNodeStructFields(*queryNode, LogicalType::STRING())));
+        auto input =
+            function::RewriteFunctionBindInput(clientContext, &expressionBinder, {queryNode});
+        queryNode->setLabelExpression(function::LabelFunction::rewriteFunc(input));
+    }
+    return queryNode;
+}
+
+static std::vector<TableCatalogEntry*> sortEntries(const table_catalog_entry_set_t& set) {
+    std::vector<TableCatalogEntry*> entries;
+    for (auto entry : set) {
+        entries.push_back(entry);
+    }
+    std::sort(entries.begin(), entries.end(),
+        [](const TableCatalogEntry* a, const TableCatalogEntry* b) {
+            return a->getTableID() < b->getTableID();
+        });
+    return entries;
+}
+
+namespace {
+
+// Scan-substitute entries (local child clones carrying a wrapper scan function) must outlive
+// the bound statement that references them. Cache them per PartitionRef so repeated binds of
+// the same remote partition reuse one stable entry. Note: a wrapper that swaps its scan
+// function for an already-bound partition within one process lifetime will keep serving the
+// function captured at first bind.
+std::mutex& scanEntryMutex() {
+    static std::mutex mtx;
+    return mtx;
+}
+
+struct ScanEntryKey {
+    const void* database;
+    const void* scanFunction;
+    bool operator==(const ScanEntryKey& other) const {
+        return database == other.database && scanFunction == other.scanFunction;
+    }
+};
+
+struct ScanEntryKeyHasher {
+    uint64_t operator()(const ScanEntryKey& key) const {
+        return std::hash<const void*>{}(key.database) * 31 +
+               std::hash<const void*>{}(key.scanFunction);
+    }
+};
+
+std::unordered_map<ScanEntryKey, std::unique_ptr<TableCatalogEntry>, ScanEntryKeyHasher>&
+scanEntryCache() {
+    static std::unordered_map<ScanEntryKey, std::unique_ptr<TableCatalogEntry>, ScanEntryKeyHasher>
+        cache;
+    return cache;
+}
+
+// Entries are cached per (database, wrapper scan function) so repeated binds reuse one stable
+// substitute without leaking state across databases.
+TableCatalogEntry* retainPartitionedScanEntry(std::unique_ptr<TableCatalogEntry> entry,
+    main::ClientContext* clientContext, const void* scanFunctionIdentity) {
+    ScanEntryKey key{clientContext->getDatabase(), scanFunctionIdentity};
+    std::lock_guard lck{scanEntryMutex()};
+    auto [it, inserted] = scanEntryCache().emplace(key, std::move(entry));
+    return it->second.get();
+}
+
+} // namespace
+
+// A partitioned parent node table owns no physical storage; its records live across its
+// partition subgraphs. When a node label resolves to a partitioned parent we expand it into the
+// child partition tables so the (existing) multi-table node scan unions over every partition.
+//
+// If a routing wrapper (see common/partition_routing_hook.h) claims a partition via `locate`,
+// the local child owns no storage and cannot be scanned; instead the wrapper supplies a scan
+// function through `bindScan`, which the engine attaches to an internal clone of the child's
+// catalog entry (keeping schema, table ID, and partition lineage). Scanning a parent that
+// mixes claimed and unclaimed partitions cannot be planned, so it is rejected at bind time.
+static table_catalog_entry_set_t expandPartitionedNodeTables(catalog::Catalog* catalog,
+    const transaction::Transaction* transaction, const table_catalog_entry_set_t& entrySet,
+    main::ClientContext* clientContext) {
+    table_catalog_entry_set_t expanded;
+    bool anyClaimed = false;
+    std::string claimedParentName;
+    for (auto entry : entrySet) {
+        if (entry->getType() != CatalogEntryType::NODE_TABLE_ENTRY) {
+            expanded.insert(entry);
+            continue;
+        }
+        auto* nodeEntry = entry->ptrCast<NodeTableCatalogEntry>();
+        if (!nodeEntry->isPartitioned()) {
+            expanded.insert(entry);
+            continue;
+        }
+        const auto* hooks = common::getPartitionRoutingHooks();
+        for (auto childID : nodeEntry->getChildTableIDs()) {
+            auto* child = catalog->getTableCatalogEntry(transaction, childID);
+            const auto ref = common::PartitionRef{nodeEntry->getTableID(),
+                child->ptrCast<NodeTableCatalogEntry>()->getPartitionIndex()};
+            common::PartitionHandle handle = nullptr;
+            if (hooks == nullptr || hooks->locate == nullptr ||
+                !hooks->locate(hooks->context, ref, &handle)) {
+                expanded.insert(child);
+                continue;
+            }
+            anyClaimed = true;
+            claimedParentName = nodeEntry->getName();
+            if (hooks->bindScan == nullptr) {
+                throw BinderException(
+                    std::format("Partition index {} of table {} is routed remotely, but the "
+                                "partition routing hooks do not provide bindScan.",
+                        ref.partitionIndex, nodeEntry->getName()));
+            }
+            common::PartitionScanSpec spec;
+            if (!hooks->bindScan(hooks->context, ref, handle, &spec)) {
+                throw BinderException(std::format("Partition routing hooks did not provide a "
+                                                  "scan for partition index {} of table {}.",
+                    ref.partitionIndex, nodeEntry->getName()));
+            }
+            if (spec.scanFunction == nullptr || spec.createBindData == nullptr) {
+                throw BinderException(std::format("Partition routing hooks provided an invalid "
+                                                  "scan for partition index {} of table {}.",
+                    ref.partitionIndex, nodeEntry->getName()));
+            }
+            // Attach the wrapper's scan to a clone of the child entry so the substitute keeps
+            // the parent's schema, table ID, and partition lineage.
+            auto patched = child->copy();
+            auto* patchedNode = patched->ptrCast<NodeTableCatalogEntry>();
+            patchedNode->setScanFunction(*spec.scanFunction);
+            patchedNode->setCreateBindDataFunc(
+                [createBindData = std::move(spec.createBindData)](main::ClientContext*,
+                    const std::string& nodeUniqueName) { return createBindData(nodeUniqueName); });
+            if (patchedNode->getBoundScanInfo(clientContext, "") == nullptr) {
+                throw BinderException(std::format(
+                    "The scan function provided by the partition routing hooks for partition "
+                    "index {} of table {} did not produce a valid scan.",
+                    ref.partitionIndex, nodeEntry->getName()));
+            }
+            // Partitions routed to the same wrapper scan share one substitute entry, so a
+            // fully-claimed parent collapses to a single entry in the set below.
+            expanded.insert(
+                retainPartitionedScanEntry(std::move(patched), clientContext, spec.scanFunction));
+        }
+    }
+    if (anyClaimed && expanded.size() > 1) {
+        throw BinderException(std::format(
+            "Table {}: scanning a mix of locally stored and remotely routed partitions is not "
+            "supported. A routing wrapper must claim either all or none of a scanned parent's "
+            "partitions and expose them as one consolidated scan entry.",
+            claimedParentName));
+    }
+    return expanded;
+}
+
+std::pair<std::vector<TableCatalogEntry*>, std::unordered_map<TableCatalogEntry*, std::string>>
+Binder::bindNodeTableEntries(const std::vector<std::string>& tableNames) const {
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    auto useInternal = clientContext->useInternalCatalogEntry();
+    // Select the base catalog for unqualified/anonymous patterns: active graph, then
+    // default database (USE db), then main.
+    auto dbManager = main::DatabaseManager::Get(*clientContext);
+    catalog::Catalog* catalog = nullptr;
+    std::string activeDbName;
+    if (auto defaultGraphCatalog = dbManager->getDefaultGraphCatalog();
+        defaultGraphCatalog != nullptr) {
+        catalog = defaultGraphCatalog;
+    } else if (dbManager->hasDefaultDatabase() &&
+               isLbugDatabase(dbManager, dbManager->getDefaultDatabase())) {
+        activeDbName = dbManager->getDefaultDatabase();
+        catalog = dbManager->getAttachedDatabase(activeDbName)->getCatalog();
+    } else {
+        catalog = Catalog::Get(*clientContext);
+    }
+    table_catalog_entry_set_t entrySet;
+    std::unordered_map<TableCatalogEntry*, std::string> dbNames;
+    if (tableNames.empty()) { // Rewrite as all node tables in the active catalog.
+        for (auto entry : catalog->getNodeTableEntries(transaction, useInternal)) {
+            if (!useInternal && isSchemaGraphTableName(entry->getName())) {
+                continue;
+            }
+            entrySet.insert(entry);
+            if (!activeDbName.empty()) {
+                dbNames[entry] = activeDbName;
+            }
+        }
+        for (auto attachedDB : dbManager->getAttachedDatabases()) {
+            auto attachedCatalog = attachedDB->getCatalog();
+            for (auto entry : attachedCatalog->getTableEntries(transaction, useInternal)) {
+                if (entry->getType() == CatalogEntryType::FOREIGN_TABLE_ENTRY) {
+                    entrySet.insert(entry);
+                    dbNames[entry] = attachedDB->getDBName();
+                }
+            }
+        }
+    } else {
+        for (auto& name : tableNames) {
+            auto [entry, dbName] = bindNodeTableEntry(name);
+            if (entry->getType() != CatalogEntryType::NODE_TABLE_ENTRY &&
+                entry->getType() != CatalogEntryType::FOREIGN_TABLE_ENTRY) {
+                throw BinderException(
+                    std::format("Cannot bind {} as a node pattern label.", entry->getName()));
+            }
+            entrySet.insert(entry);
+            if (!dbName.empty()) {
+                dbNames[entry] = dbName;
+            }
+        }
+    }
+    // Expand partitioned parents into their partition subgraphs for scanning.
+    entrySet = expandPartitionedNodeTables(catalog, transaction, entrySet, clientContext);
+    return {sortEntries(entrySet), std::move(dbNames)};
+}
+
+std::pair<TableCatalogEntry*, std::string> Binder::bindNodeTableEntry(
+    const std::string& name) const {
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    auto useInternal = clientContext->useInternalCatalogEntry();
+
+    std::string dbName;
+    std::string tableName = name;
+    auto dotPos = name.find('.');
+    if (dotPos != std::string::npos) {
+        dbName = name.substr(0, dotPos);
+        tableName = name.substr(dotPos + 1);
+    }
+
+    if (!dbName.empty()) {
+        // Qualified name: db.table
+        auto attachedDB = main::DatabaseManager::Get(*clientContext)->getAttachedDatabase(dbName);
+        if (!attachedDB) {
+            throw BinderException(std::format("Attached database {} does not exist.", dbName));
+        }
+        auto attachedCatalog = attachedDB->getCatalog();
+        if (!attachedCatalog->containsTable(transaction, tableName, useInternal)) {
+            throw BinderException(
+                std::format("Table {} does not exist in attached database {}.", tableName, dbName));
+        }
+        return {attachedCatalog->getTableCatalogEntry(transaction, tableName, useInternal), dbName};
+    } else {
+        // Check if there's a default graph set and use its catalog; otherwise fall
+        // back to the default database (USE db), then main.
+        auto dbManager = main::DatabaseManager::Get(*clientContext);
+        catalog::Catalog* catalog = nullptr;
+        std::string resolvedDbName;
+        if (auto defaultGraphCatalog = dbManager->getDefaultGraphCatalog();
+            defaultGraphCatalog != nullptr) {
+            catalog = defaultGraphCatalog;
+        } else if (dbManager->hasDefaultDatabase() &&
+                   isLbugDatabase(dbManager, dbManager->getDefaultDatabase())) {
+            resolvedDbName = dbManager->getDefaultDatabase();
+            catalog = dbManager->getAttachedDatabase(resolvedDbName)->getCatalog();
+        } else {
+            catalog = Catalog::Get(*clientContext);
+        }
+        // Unqualified name: only search the active catalog
+        // Foreign tables require qualified names (db.table) to avoid ambiguity
+        bool hasTable = catalog->containsTable(transaction, name, useInternal);
+        if (hasTable) {
+            return {catalog->getTableCatalogEntry(transaction, name, useInternal), resolvedDbName};
+        }
+        // Check if this is an ANY graph (has _nodes table)
+        // In ANY graphs, labels are stored dynamically in the _nodes table
+        bool hasNodes = catalog->containsTable(transaction, "_nodes", useInternal);
+        if (hasNodes) {
+            return {catalog->getTableCatalogEntry(transaction, "_nodes", useInternal), ""};
+        }
+        throw BinderException(std::format("Table {} does not exist.", name));
+    }
+}
+
+std::pair<std::vector<TableCatalogEntry*>, std::unordered_map<TableCatalogEntry*, std::string>>
+Binder::bindRelGroupEntries(const std::vector<std::string>& tableNames,
+    const std::string& contextDbName) const {
+    auto transaction = transaction::Transaction::Get(*clientContext);
+    auto useInternal = clientContext->useInternalCatalogEntry();
+
+    // Resolve the catalog for unqualified names / the anonymous case. An explicit
+    // context (all endpoint nodes from the same attached database) wins; otherwise
+    // fall back to the active graph, then the default database (USE db), then main.
+    auto dbManager = main::DatabaseManager::Get(*clientContext);
+    catalog::Catalog* catalog = nullptr;
+    std::string activeDbName;
+    if (!contextDbName.empty()) {
+        activeDbName = contextDbName;
+    } else if (auto defaultGraphCatalog = dbManager->getDefaultGraphCatalog();
+               defaultGraphCatalog != nullptr) {
+        catalog = defaultGraphCatalog;
+    } else if (dbManager->hasDefaultDatabase() &&
+               isLbugDatabase(dbManager, dbManager->getDefaultDatabase())) {
+        activeDbName = dbManager->getDefaultDatabase();
+    } else {
+        catalog = Catalog::Get(*clientContext);
+    }
+    if (!activeDbName.empty()) {
+        catalog = dbManager->getAttachedDatabase(activeDbName)->getCatalog();
+    }
+
+    table_catalog_entry_set_t entrySet;
+    std::unordered_map<TableCatalogEntry*, std::string> dbNames;
+    if (tableNames.empty()) { // Rewrite as all rel groups in the active catalog.
+        for (auto entry : catalog->getRelGroupEntries(transaction, useInternal)) {
+            if (!useInternal && isSchemaGraphTableName(entry->getName())) {
+                continue;
+            }
+            entrySet.insert(entry);
+            if (!activeDbName.empty()) {
+                dbNames[entry] = activeDbName;
+            }
+        }
+    } else {
+        for (auto& name : tableNames) {
+            std::string dbName;
+            std::string tableName = name;
+            auto dotPos = name.find('.');
+            if (dotPos != std::string::npos) {
+                dbName = name.substr(0, dotPos);
+                tableName = name.substr(dotPos + 1);
+            }
+            // Qualified name (db.rel) resolves in that attached database's catalog;
+            // unqualified names resolve in the active catalog selected above.
+            catalog::Catalog* targetCatalog = catalog;
+            std::string resolvedDbName = activeDbName;
+            if (!dbName.empty()) {
+                auto* attachedDB = dbManager->getAttachedDatabase(dbName);
+                targetCatalog = attachedDB->getCatalog();
+                resolvedDbName = dbName;
+            }
+            if (targetCatalog->containsTable(transaction, tableName, useInternal)) {
+                auto entry =
+                    targetCatalog->getTableCatalogEntry(transaction, tableName, useInternal);
+                if (entry->getType() != CatalogEntryType::REL_GROUP_ENTRY) {
+                    throw BinderException(std::format(
+                        "Cannot bind {} as a relationship pattern label.", entry->getName()));
+                }
+                entrySet.insert(entry);
+                if (!resolvedDbName.empty()) {
+                    dbNames[entry] = resolvedDbName;
+                }
+            } else {
+                // Check if this is an ANY graph (has _edges table)
+                // In ANY graphs, labels are stored dynamically in the _edges table
+                if (targetCatalog->containsTable(transaction, "_edges", useInternal)) {
+                    auto entry =
+                        targetCatalog->getTableCatalogEntry(transaction, "_edges", useInternal);
+                    entrySet.insert(entry);
+                    if (!resolvedDbName.empty()) {
+                        dbNames[entry] = resolvedDbName;
+                    }
+                } else {
+                    throw BinderException(std::format("Table {} does not exist.", name));
+                }
+            }
+        }
+    }
+    return {sortEntries(entrySet), std::move(dbNames)};
+}
+
+} // namespace binder
+} // namespace lbug

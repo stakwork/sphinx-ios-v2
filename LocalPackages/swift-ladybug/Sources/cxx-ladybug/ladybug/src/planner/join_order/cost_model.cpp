@@ -1,0 +1,66 @@
+#include "planner/join_order/cost_model.h"
+
+#include "common/constants.h"
+#include "planner/join_order/join_order_util.h"
+#include "planner/operator/logical_hash_join.h"
+
+using namespace lbug::common;
+
+namespace lbug {
+namespace planner {
+
+uint64_t CostModel::computeExtendCost(const LogicalPlan& childPlan,
+    cardinality_t estimatedOutputCardinality) {
+    // Extending scans the adjacency of every bound row and materializes the fan-out, so
+    // both the input scan and the produced rows contribute to the cost.
+    return childPlan.getCost() + childPlan.getCardinality() + estimatedOutputCardinality;
+}
+
+uint64_t CostModel::computeHashJoinCost(const std::vector<binder::expression_pair>& joinConditions,
+    const LogicalPlan& probe, const LogicalPlan& build) {
+    return computeHashJoinCost(LogicalHashJoin::getJoinNodeIDs(joinConditions), probe, build);
+}
+
+uint64_t CostModel::computeHashJoinCost(const binder::expression_vector& joinNodeIDs,
+    const LogicalPlan& probe, const LogicalPlan& build) {
+    return computeHashJoinCost(joinNodeIDs, probe, build, 0 /* estimatedOutputCardinality */);
+}
+
+uint64_t CostModel::computeHashJoinCost(const binder::expression_vector& joinNodeIDs,
+    const LogicalPlan& probe, const LogicalPlan& build, cardinality_t estimatedOutputCardinality) {
+    uint64_t cost = 0ul;
+    cost += probe.getCost();
+    cost += build.getCost();
+    cost += probe.getCardinality();
+    cost += estimatedOutputCardinality;
+    cost += PlannerKnobs::BUILD_PENALTY *
+            JoinOrderUtil::getJoinKeysFlatCardinality(joinNodeIDs, build.getLastOperatorRef());
+    return cost;
+}
+
+uint64_t CostModel::computeMarkJoinCost(const std::vector<binder::expression_pair>& joinConditions,
+    const LogicalPlan& probe, const LogicalPlan& build) {
+    return computeMarkJoinCost(LogicalHashJoin::getJoinNodeIDs(joinConditions), probe, build);
+}
+
+uint64_t CostModel::computeMarkJoinCost(const binder::expression_vector& joinNodeIDs,
+    const LogicalPlan& probe, const LogicalPlan& build) {
+    return computeHashJoinCost(joinNodeIDs, probe, build);
+}
+
+uint64_t CostModel::computeIntersectCost(const LogicalPlan& probePlan,
+    const std::vector<LogicalPlan>& buildPlans) {
+    uint64_t cost = 0ul;
+    cost += probePlan.getCost();
+    // TODO(Xiyang): think of how to calculate intersect cost such that it will be picked in worst
+    // case.
+    cost += probePlan.getCardinality();
+    for (auto& buildPlan : buildPlans) {
+        DASSERT(buildPlan.getCardinality() >= 1);
+        cost += buildPlan.getCost();
+    }
+    return cost;
+}
+
+} // namespace planner
+} // namespace lbug

@@ -1,0 +1,186 @@
+#pragma once
+
+#include <cstring>
+#include <functional>
+#include <limits>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "common/assert.h"
+#include "common/serializer/reader.h"
+
+namespace lbug {
+namespace common {
+
+class LBUG_API Deserializer {
+public:
+    explicit Deserializer(std::unique_ptr<Reader> reader) : reader(std::move(reader)) {}
+
+    bool finished() const { return reader->finished(); }
+
+    void setStorageVersion(uint64_t version) { storageVersion = version; }
+    uint64_t getStorageVersion() const { return storageVersion; }
+
+    template<typename T>
+        requires std::is_trivially_destructible_v<T> || std::is_same_v<std::string, T>
+    void deserializeValue(T& value) {
+        this->read(reinterpret_cast<uint8_t*>(&value), sizeof(T));
+    }
+
+    void read(uint8_t* data, uint64_t size) const {
+        if (readLimit.has_value()) {
+            const auto remaining = *readLimit - getReadOffset();
+            if (size > remaining) {
+                // Don't read past the declared record boundary.
+                // Read what's available and zero-fill the rest so that fields added
+                // in a newer format default to zero when reading older WAL records.
+                if (remaining > 0) {
+                    reader->read(data, remaining);
+                }
+                std::memset(data + remaining, 0, size - remaining);
+                return;
+            }
+        }
+        reader->read(data, size);
+    }
+
+    Reader* getReader() const { return reader.get(); }
+
+    uint64_t getReadOffset() const { return reader->getReadOffset(); }
+    void beginReadLimit(uint64_t size) { readLimit = getReadOffset() + size; }
+    bool hasRemainingData() const { return !readLimit.has_value() || getReadOffset() < *readLimit; }
+    void skipReadLimit() {
+        if (!readLimit.has_value()) {
+            return;
+        }
+        const auto endOffset = *readLimit;
+        const auto readOffset = getReadOffset();
+        if (readOffset < endOffset) {
+            reader->skip(endOffset - readOffset);
+        }
+        readLimit.reset();
+    }
+
+    void validateDebuggingInfo(std::string& value, const std::string& expectedVal);
+
+    template<typename T>
+    void deserializeOptionalValue(std::unique_ptr<T>& value) {
+        bool isNull = false;
+        deserializeValue(isNull);
+        if (!isNull) {
+            value = T::deserialize(*this);
+        }
+    }
+
+    template<typename T1, typename T2>
+    void deserializeMap(std::map<T1, T2>& values) {
+        uint64_t mapSize = 0;
+        deserializeValue<uint64_t>(mapSize);
+        for (auto i = 0u; i < mapSize; i++) {
+            T1 key;
+            deserializeValue<T1>(key);
+            auto val = T2::deserialize(*this);
+            values.emplace(key, std::move(val));
+        }
+    }
+
+    template<typename T1, typename T2>
+    void deserializeUnorderedMap(std::unordered_map<T1, T2>& values) {
+        uint64_t mapSize = 0;
+        deserializeValue<uint64_t>(mapSize);
+        for (auto i = 0u; i < mapSize; i++) {
+            T1 key;
+            deserializeValue<T1>(key);
+            T2 val;
+            deserializeValue(val);
+            values.emplace(key, std::move(val));
+        }
+    }
+
+    template<typename T1, typename T2>
+    void deserializeUnorderedMapOfPtrs(std::unordered_map<T1, std::unique_ptr<T2>>& values) {
+        uint64_t mapSize = 0;
+        deserializeValue<uint64_t>(mapSize);
+        values.reserve(mapSize);
+        for (auto i = 0u; i < mapSize; i++) {
+            T1 key;
+            deserializeValue<T1>(key);
+            auto val = T2::deserialize(*this);
+            values.emplace(key, std::move(val));
+        }
+    }
+
+    template<typename T>
+    void deserializeVector(std::vector<T>& values) {
+        uint64_t vectorSize = 0;
+        deserializeValue(vectorSize);
+        values.resize(vectorSize);
+        for (auto& value : values) {
+            if constexpr (requires(Deserializer& deser) { T::deserialize(deser); }) {
+                value = T::deserialize(*this);
+            } else {
+                deserializeValue(value);
+            }
+        }
+    }
+
+    template<typename T, uint64_t ARRAY_SIZE>
+    void deserializeArray(std::array<T, ARRAY_SIZE>& values) {
+        DASSERT(values.size() == ARRAY_SIZE);
+        for (auto& value : values) {
+            if constexpr (requires(Deserializer& deser) { T::deserialize(deser); }) {
+                value = T::deserialize(*this);
+            } else {
+                deserializeValue(value);
+            }
+        }
+    }
+
+    template<typename T>
+    void deserializeVectorOfPtrs(std::vector<std::unique_ptr<T>>& values) {
+        uint64_t vectorSize = 0;
+        deserializeValue(vectorSize);
+        values.resize(vectorSize);
+        for (auto i = 0u; i < vectorSize; i++) {
+            values[i] = T::deserialize(*this);
+        }
+    }
+
+    template<typename T>
+    void deserializeVectorOfPtrs(std::vector<std::unique_ptr<T>>& values,
+        std::function<std::unique_ptr<T>(Deserializer&)> deserializeFunc) {
+        uint64_t vectorSize = 0;
+        deserializeValue(vectorSize);
+        values.resize(vectorSize);
+        for (auto i = 0u; i < vectorSize; i++) {
+            values[i] = deserializeFunc(*this);
+        }
+    }
+
+    template<typename T>
+    void deserializeUnorderedSet(std::unordered_set<T>& values) {
+        uint64_t setSize = 0;
+        deserializeValue(setSize);
+        for (auto i = 0u; i < setSize; i++) {
+            T value;
+            deserializeValue<T>(value);
+            values.insert(value);
+        }
+    }
+
+private:
+    std::unique_ptr<Reader> reader;
+    uint64_t storageVersion = std::numeric_limits<uint64_t>::max();
+    std::optional<uint64_t> readLimit;
+};
+
+template<>
+void Deserializer::deserializeValue(std::string& value);
+
+} // namespace common
+} // namespace lbug

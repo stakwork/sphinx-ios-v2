@@ -1,0 +1,377 @@
+#include "main/settings.h"
+
+#include "common/assert.h"
+#include "common/exception/runtime.h"
+#include "common/string_utils.h"
+#include "common/task_system/progress_bar.h"
+#include "main/attached_database.h"
+#include "main/client_context.h"
+#include "main/database.h"
+#include "main/database_manager.h"
+#include "main/db_config.h"
+#include "storage/buffer_manager/buffer_manager.h"
+#include "storage/buffer_manager/memory_manager.h"
+#include "storage/storage_utils.h"
+#include <format>
+
+namespace lbug {
+namespace main {
+
+namespace {
+
+void setDefaultHashIndexEnabledOnStorageManagers(ClientContext* context, bool enabled) {
+    context->getDatabase()->getStorageManager()->setDefaultHashIndexEnabled(enabled);
+    auto* databaseManager = context->getDatabase()->getDatabaseManager();
+    for (auto* graphCatalog : databaseManager->getGraphs()) {
+        if (auto* storageManager = graphCatalog->getStorageManager()) {
+            storageManager->setDefaultHashIndexEnabled(enabled);
+        }
+    }
+    for (auto* attachedDatabase : databaseManager->getAttachedDatabases()) {
+        if (auto* attachedLbugDatabase = dynamic_cast<AttachedLbugDatabase*>(attachedDatabase)) {
+            attachedLbugDatabase->getStorageManager()->setDefaultHashIndexEnabled(enabled);
+        }
+    }
+}
+
+} // namespace
+
+void ThreadsSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->numThreads = parameter.getValue<uint64_t>();
+}
+
+common::Value ThreadsSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->numThreads);
+}
+
+void WarningLimitSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->warningLimit = parameter.getValue<uint64_t>();
+}
+
+common::Value WarningLimitSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->warningLimit);
+}
+
+void TimeoutSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->timeoutInMS = parameter.getValue<uint64_t>();
+}
+
+common::Value TimeoutSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->timeoutInMS);
+}
+
+void ProgressBarSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->enableProgressBar = parameter.getValue<bool>();
+    common::ProgressBar::Get(*context)->toggleProgressBarPrinting(parameter.getValue<bool>());
+}
+
+common::Value ProgressBarSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->enableProgressBar);
+}
+
+void VarLengthExtendMaxDepthSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->varLengthMaxDepth = parameter.getValue<int64_t>();
+}
+
+common::Value VarLengthExtendMaxDepthSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->varLengthMaxDepth);
+}
+
+void SparseFrontierThresholdSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->sparseFrontierThreshold = parameter.getValue<int64_t>();
+}
+
+common::Value SparseFrontierThresholdSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->sparseFrontierThreshold);
+}
+
+void EnableSemiMaskSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->enableSemiMask = parameter.getValue<bool>();
+}
+
+common::Value EnableSemiMaskSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->enableSemiMask);
+}
+
+void DisableMapKeyCheck::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->disableMapKeyCheck = parameter.getValue<bool>();
+}
+
+common::Value DisableMapKeyCheck::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->disableMapKeyCheck);
+}
+
+void EnableZoneMapSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->enableZoneMap = parameter.getValue<bool>();
+}
+
+common::Value EnableZoneMapSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->enableZoneMap);
+}
+
+void HomeDirectorySetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->homeDirectory = parameter.getValue<std::string>();
+}
+
+common::Value HomeDirectorySetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(context->getClientConfig()->homeDirectory);
+}
+
+void FileSearchPathSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->fileSearchPath = parameter.getValue<std::string>();
+}
+
+common::Value FileSearchPathSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(context->getClientConfig()->fileSearchPath);
+}
+
+void RecursivePatternSemanticSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    const auto input = parameter.getValue<std::string>();
+    context->getClientConfigUnsafe()->recursivePatternSemantic =
+        common::PathSemanticUtils::fromString(input);
+}
+
+common::Value RecursivePatternSemanticSetting::getSetting(const ClientContext* context) {
+    const auto result =
+        common::PathSemanticUtils::toString(context->getClientConfig()->recursivePatternSemantic);
+    return common::Value::createValue(result);
+}
+
+void RecursivePatternFactorSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->recursivePatternCardinalityScaleFactor =
+        parameter.getValue<std::int64_t>();
+}
+
+common::Value RecursivePatternFactorSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(
+        context->getClientConfig()->recursivePatternCardinalityScaleFactor);
+}
+
+void EnableMVCCSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    DASSERT(parameter.getDataType().getLogicalTypeID() == common::LogicalTypeID::BOOL);
+    // TODO: This is a temporary solution to make tests of multiple write transactions easier.
+    context->getDBConfigUnsafe()->enableMultiWrites = parameter.getValue<bool>();
+}
+
+common::Value EnableMVCCSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getDBConfig()->enableMultiWrites);
+}
+
+void CheckpointThresholdSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getDBConfigUnsafe()->checkpointThreshold = parameter.getValue<int64_t>();
+}
+
+common::Value CheckpointThresholdSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getDBConfig()->checkpointThreshold);
+}
+
+void AutoCheckpointSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getDBConfigUnsafe()->autoCheckpoint = parameter.getValue<bool>();
+}
+
+common::Value AutoCheckpointSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getDBConfig()->autoCheckpoint);
+}
+
+void ForceCheckpointClosingDBSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getDBConfigUnsafe()->forceCheckpointOnClose = parameter.getValue<bool>();
+}
+
+common::Value ForceCheckpointClosingDBSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getDBConfig()->forceCheckpointOnClose);
+}
+
+void EnableDefaultHashIndexSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    const auto enabled = parameter.getValue<bool>();
+    context->getDBConfigUnsafe()->enableDefaultHashIndex = enabled;
+    setDefaultHashIndexEnabledOnStorageManagers(context, enabled);
+}
+
+common::Value EnableDefaultHashIndexSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getDBConfig()->enableDefaultHashIndex);
+}
+
+void EnableOptimizerSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->enablePlanOptimizer = parameter.getValue<bool>();
+}
+
+common::Value EnableOptimizerSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(context->getClientConfig()->enablePlanOptimizer);
+}
+
+void EnableInternalCatalogSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->enableInternalCatalog = parameter.getValue<bool>();
+}
+
+common::Value EnableInternalCatalogSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(context->getClientConfig()->enableInternalCatalog);
+}
+
+void EnablePackedPathExtendSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->enablePackedPathExtend = parameter.getValue<bool>();
+}
+
+common::Value EnablePackedPathExtendSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(context->getClientConfig()->enablePackedPathExtend);
+}
+
+CachedPreparedStatementScope CachedPreparedStatementScopeUtils::fromString(const std::string& str) {
+    auto normalizedStr = common::StringUtils::getUpper(str);
+    if (normalizedStr == "READS") {
+        return CachedPreparedStatementScope::READS;
+    }
+    if (normalizedStr == "WRITES") {
+        return CachedPreparedStatementScope::WRITES;
+    }
+    if (normalizedStr == "BOTH") {
+        return CachedPreparedStatementScope::BOTH;
+    }
+    if (normalizedStr == "NONE") {
+        return CachedPreparedStatementScope::NONE;
+    }
+    throw common::RuntimeException(
+        std::format("Cannot parse {} as a cached prepared statement scope. "
+                    "Supported inputs are [READS, WRITES, BOTH, NONE]",
+            str));
+}
+
+std::string CachedPreparedStatementScopeUtils::toString(CachedPreparedStatementScope scope) {
+    switch (scope) {
+    case CachedPreparedStatementScope::READS:
+        return "READS";
+    case CachedPreparedStatementScope::WRITES:
+        return "WRITES";
+    case CachedPreparedStatementScope::BOTH:
+        return "BOTH";
+    case CachedPreparedStatementScope::NONE:
+        return "NONE";
+    default:
+        UNREACHABLE_CODE;
+    }
+}
+
+SubNodeGroupMorselScope SubNodeGroupMorselScopeUtils::fromString(const std::string& str) {
+    auto normalizedStr = common::StringUtils::getUpper(str);
+    if (normalizedStr == "READS") {
+        return SubNodeGroupMorselScope::READS;
+    }
+    if (normalizedStr == "WRITES") {
+        return SubNodeGroupMorselScope::WRITES;
+    }
+    if (normalizedStr == "BOTH") {
+        return SubNodeGroupMorselScope::BOTH;
+    }
+    if (normalizedStr == "NONE") {
+        return SubNodeGroupMorselScope::NONE;
+    }
+    throw common::RuntimeException(std::format("Cannot parse {} as a sub-node-group morsel scope. "
+                                               "Supported inputs are [READS, WRITES, BOTH, NONE]",
+        str));
+}
+
+std::string SubNodeGroupMorselScopeUtils::toString(SubNodeGroupMorselScope scope) {
+    switch (scope) {
+    case SubNodeGroupMorselScope::READS:
+        return "READS";
+    case SubNodeGroupMorselScope::WRITES:
+        return "WRITES";
+    case SubNodeGroupMorselScope::BOTH:
+        return "BOTH";
+    case SubNodeGroupMorselScope::NONE:
+        return "NONE";
+    default:
+        UNREACHABLE_CODE;
+    }
+}
+
+void EnableCachedPreparedStatementSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->cachedPreparedStatementScope =
+        CachedPreparedStatementScopeUtils::fromString(parameter.getValue<std::string>());
+}
+
+common::Value EnableCachedPreparedStatementSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(CachedPreparedStatementScopeUtils::toString(
+        context->getClientConfig()->cachedPreparedStatementScope));
+}
+
+void EnableSubNodeGroupMorselsSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->subNodeGroupMorselScope =
+        SubNodeGroupMorselScopeUtils::fromString(parameter.getValue<std::string>());
+}
+
+common::Value EnableSubNodeGroupMorselsSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(SubNodeGroupMorselScopeUtils::toString(
+        context->getClientConfig()->subNodeGroupMorselScope));
+}
+
+void SpillToDiskSetting::setContext(ClientContext* context, const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getDBConfigUnsafe()->enableSpillingToDisk = parameter.getValue<bool>();
+    const auto& dbConfig = *context->getDBConfig();
+    std::string spillPath;
+    if (dbConfig.enableSpillingToDisk) {
+        if (context->isInMemory()) {
+            throw common::RuntimeException(
+                "Cannot set spill_to_disk to true for an in-memory database!");
+        }
+        if (!context->canExecuteWriteQuery()) {
+            throw common::RuntimeException(
+                "Cannot set spill_to_disk to true for a read only database!");
+        }
+        spillPath = storage::StorageUtils::getTmpFilePath(context->getDatabasePath());
+    } else {
+        // Set path to empty will disable spiller.
+        spillPath = "";
+    }
+    storage::MemoryManager::Get(*context)->getBufferManager()->resetSpiller(spillPath);
+}
+
+common::Value SpillToDiskSetting::getSetting(const ClientContext* context) {
+    return common::Value::createValue(context->getDBConfig()->enableSpillingToDisk);
+}
+
+void PKValidatorSpillThresholdSetting::setContext(ClientContext* context,
+    const common::Value& parameter) {
+    parameter.validateType(inputType);
+    context->getClientConfigUnsafe()->pkValidatorSpillThreshold = parameter.getValue<uint64_t>();
+}
+
+common::Value PKValidatorSpillThresholdSetting::getSetting(const ClientContext* context) {
+    return common::Value(context->getClientConfig()->pkValidatorSpillThreshold);
+}
+
+} // namespace main
+} // namespace lbug

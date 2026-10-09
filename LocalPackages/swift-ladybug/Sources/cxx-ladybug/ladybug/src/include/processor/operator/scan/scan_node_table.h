@@ -1,0 +1,150 @@
+#pragma once
+
+#include "processor/operator/scan/scan_table.h"
+#include "storage/predicate/column_predicate.h"
+#include "storage/table/node_table.h"
+
+namespace lbug {
+namespace storage {
+class MemoryManager;
+} // namespace storage
+
+namespace main {
+class ClientContext;
+} // namespace main
+
+namespace processor {
+
+std::unique_ptr<storage::TableScanState> createNodeTableScanState(storage::NodeTable* table,
+    common::ValueVector* nodeIDVector, const std::vector<common::ValueVector*>& outVectors,
+    storage::MemoryManager* memoryManager);
+
+struct ScanNodeTableProgressSharedState {
+    std::atomic<common::node_group_idx_t> numMorselsScanned;
+    common::node_group_idx_t numMorsels;
+
+    ScanNodeTableProgressSharedState() : numMorselsScanned{0}, numMorsels{0} {};
+};
+
+class ScanNodeTableSharedState {
+public:
+    explicit ScanNodeTableSharedState(std::unique_ptr<common::SemiMask> semiMask)
+        : table{nullptr}, currentCommittedGroupIdx{common::INVALID_NODE_GROUP_IDX},
+          currentUnCommittedGroupIdx{common::INVALID_NODE_GROUP_IDX}, numCommittedNodeGroups{0},
+          numUnCommittedNodeGroups{0}, semiMask{std::move(semiMask)} {};
+
+    void initialize(const transaction::Transaction* transaction, storage::NodeTable* table,
+        ScanNodeTableProgressSharedState& progressSharedState, main::ClientContext* context);
+
+    void nextMorsel(storage::TableScanState& scanState,
+        ScanNodeTableProgressSharedState& progressSharedState);
+
+    common::SemiMask* getSemiMask() const { return semiMask.get(); }
+
+private:
+    std::mutex mtx;
+    storage::NodeTable* table;
+    common::node_group_idx_t currentCommittedGroupIdx;
+    common::node_group_idx_t currentUnCommittedGroupIdx;
+    common::node_group_idx_t numCommittedNodeGroups;
+    common::node_group_idx_t numUnCommittedNodeGroups;
+    std::unique_ptr<common::SemiMask> semiMask;
+    // Sub-node-group morsel support. When the table has fewer node groups than worker
+    // threads, group-granularity morsels leave downstream traversals (which can only be
+    // parallelized through the scan's morsels) mostly serial. In that case each node group
+    // is split into morsels of `committedMorselSize` rows instead, so parallelism is
+    // recovered within the small source table.
+    // INVALID_ROW_IDX means one node group per morsel (the default).
+    common::row_idx_t committedMorselSize = common::INVALID_ROW_IDX;
+    // Number of rows in each committed node group. Only populated when splitting.
+    std::vector<common::row_idx_t> committedGroupNumRows;
+    // Next row (within the current committed node group) to hand out as a morsel.
+    common::row_idx_t currentGroupNextRow = 0;
+};
+
+struct ScanNodeTablePrintInfo final : OPPrintInfo {
+    std::vector<std::string> tableNames;
+    std::string alias;
+    binder::expression_vector properties;
+
+    ScanNodeTablePrintInfo(std::vector<std::string> tableNames, std::string alias,
+        binder::expression_vector properties)
+        : tableNames{std::move(tableNames)}, alias{std::move(alias)},
+          properties{std::move(properties)} {}
+
+    std::string toString() const override;
+
+    std::unique_ptr<OPPrintInfo> copy() const override {
+        return std::unique_ptr<ScanNodeTablePrintInfo>(new ScanNodeTablePrintInfo(*this));
+    }
+
+private:
+    ScanNodeTablePrintInfo(const ScanNodeTablePrintInfo& other)
+        : OPPrintInfo{other}, tableNames{other.tableNames}, alias{other.alias},
+          properties{other.properties} {}
+};
+
+struct ScanNodeTableInfo : ScanTableInfo {
+    ScanNodeTableInfo(storage::Table* table,
+        std::vector<storage::ColumnPredicateSet> columnPredicates)
+        : ScanTableInfo{table, std::move(columnPredicates)} {}
+    EXPLICIT_COPY_DEFAULT_MOVE(ScanNodeTableInfo);
+
+    void initScanState(storage::TableScanState& scanState,
+        const std::vector<common::ValueVector*>& outVectors, main::ClientContext* context) override;
+
+private:
+    ScanNodeTableInfo(const ScanNodeTableInfo& other) : ScanTableInfo{other} {}
+};
+
+class ScanNodeTable final : public ScanTable {
+    static constexpr PhysicalOperatorType type_ = PhysicalOperatorType::SCAN_NODE_TABLE;
+
+public:
+    ScanNodeTable(ScanOpInfo opInfo, std::vector<ScanNodeTableInfo> tableInfos,
+        std::vector<std::shared_ptr<ScanNodeTableSharedState>> sharedStates, uint32_t id,
+        std::unique_ptr<OPPrintInfo> printInfo,
+        std::shared_ptr<ScanNodeTableProgressSharedState> progressSharedState)
+        : ScanTable{type_, std::move(opInfo), id, std::move(printInfo)}, currentTableIdx{0},
+          scanState{nullptr}, nodeIDVector{nullptr}, tableInfos{std::move(tableInfos)},
+          sharedStates{std::move(sharedStates)},
+          progressSharedState{std::move(progressSharedState)} {
+        DASSERT(this->tableInfos.size() == this->sharedStates.size());
+    }
+
+    common::table_id_map_t<common::SemiMask*> getSemiMasks() const;
+
+    bool isSource() const override { return true; }
+
+    void initLocalStateInternal(ResultSet* resultSet, ExecutionContext* context) override;
+
+    bool getNextTuplesInternal(ExecutionContext* context) override;
+
+    const ScanNodeTableSharedState& getSharedState(common::idx_t idx) const {
+        DASSERT(idx < sharedStates.size());
+        return *sharedStates[idx];
+    }
+
+    std::unique_ptr<PhysicalOperator> copy() override {
+        return std::make_unique<ScanNodeTable>(opInfo.copy(), copyVector(tableInfos), sharedStates,
+            id, printInfo->copy(), progressSharedState);
+    }
+
+    double getProgress(ExecutionContext* context) const override;
+
+private:
+    void initGlobalStateInternal(ExecutionContext* context) override;
+
+    void initCurrentTable(ExecutionContext* context);
+
+private:
+    common::idx_t currentTableIdx;
+    std::unique_ptr<storage::TableScanState> scanState;
+    common::ValueVector* nodeIDVector;
+    std::vector<ScanNodeTableInfo> tableInfos;
+    std::vector<std::shared_ptr<ScanNodeTableSharedState>> sharedStates;
+    std::shared_ptr<ScanNodeTableProgressSharedState> progressSharedState;
+};
+
+} // namespace processor
+} // namespace lbug

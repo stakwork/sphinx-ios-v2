@@ -20,4 +20,5 @@ sphinx/Secrets.debug.xcconfig
 sphinx/Secrets.release.xcconfig
 
 LocalPackages/SphinxErrorReporter/.build/
+LocalPackages/swift-ladybug/.build/
 

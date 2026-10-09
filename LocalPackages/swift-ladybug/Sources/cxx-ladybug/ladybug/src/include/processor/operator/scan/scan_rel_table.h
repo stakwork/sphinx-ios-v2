@@ -1,0 +1,177 @@
+#pragma once
+
+#include "binder/expression/rel_expression.h"
+#include "common/enums/extend_direction.h"
+#include "processor/operator/scan/scan_node_table.h"
+#include "processor/operator/scan/scan_table.h"
+#include "storage/predicate/column_predicate.h"
+#include "storage/table/rel_table.h"
+
+namespace lbug {
+namespace storage {
+class MemoryManager;
+class NodeTable;
+} // namespace storage
+namespace processor {
+
+struct ScanRelTableInfo : ScanTableInfo {
+    common::RelDataDirection direction;
+
+    ScanRelTableInfo(storage::Table* table,
+        std::vector<storage::ColumnPredicateSet> columnPredicates,
+        common::RelDataDirection direction)
+        : ScanTableInfo{table, std::move(columnPredicates)}, direction{direction} {}
+    EXPLICIT_COPY_DEFAULT_MOVE(ScanRelTableInfo);
+
+    void initScanState(storage::TableScanState& scanState,
+        const std::vector<common::ValueVector*>& outVectors, main::ClientContext* context) override;
+
+private:
+    ScanRelTableInfo(const ScanRelTableInfo& other)
+        : ScanTableInfo{other}, direction{other.direction} {}
+};
+
+struct ScanRelTablePrintInfo final : OPPrintInfo {
+    std::vector<std::string> tableNames;
+    binder::expression_vector properties;
+    std::shared_ptr<binder::NodeExpression> boundNode;
+    std::shared_ptr<binder::RelExpression> rel;
+    std::shared_ptr<binder::NodeExpression> nbrNode;
+    common::ExtendDirection direction;
+    std::string alias;
+
+    ScanRelTablePrintInfo(std::vector<std::string> tableNames, binder::expression_vector properties,
+        std::shared_ptr<binder::NodeExpression> boundNode,
+        std::shared_ptr<binder::RelExpression> rel, std::shared_ptr<binder::NodeExpression> nbrNode,
+        common::ExtendDirection direction, std::string alias)
+        : tableNames{std::move(tableNames)}, properties{std::move(properties)},
+          boundNode{std::move(boundNode)}, rel{std::move(rel)}, nbrNode{std::move(nbrNode)},
+          direction{direction}, alias{std::move(alias)} {}
+
+    std::string toString() const override;
+
+    std::unique_ptr<OPPrintInfo> copy() const override {
+        return std::unique_ptr<ScanRelTablePrintInfo>(new ScanRelTablePrintInfo(*this));
+    }
+
+private:
+    ScanRelTablePrintInfo(const ScanRelTablePrintInfo& other)
+        : OPPrintInfo{other}, tableNames{other.tableNames}, properties{other.properties},
+          boundNode{other.boundNode}, rel{other.rel}, nbrNode{other.nbrNode},
+          direction{other.direction}, alias{other.alias} {}
+};
+
+class ScanRelTable final : public ScanTable {
+    static constexpr PhysicalOperatorType type_ = PhysicalOperatorType::SCAN_REL_TABLE;
+
+public:
+    ScanRelTable(ScanOpInfo info, ScanRelTableInfo tableInfo,
+        std::unique_ptr<PhysicalOperator> child, physical_op_id id,
+        std::unique_ptr<OPPrintInfo> printInfo, PhysicalOperatorType operatorType = type_)
+        : ScanTable{operatorType, std::move(info), std::move(child), id, std::move(printInfo)},
+          tableInfo{std::move(tableInfo)}, sourceNodeScanInfo{DataPos::getInvalidPos(), {}} {}
+
+    ScanRelTable(ScanOpInfo info, ScanRelTableInfo tableInfo,
+        std::vector<storage::NodeTable*> sourceNodeTables, physical_op_id id,
+        std::unique_ptr<OPPrintInfo> printInfo, PhysicalOperatorType operatorType = type_)
+        : ScanTable{operatorType, std::move(info), id, std::move(printInfo)},
+          tableInfo{std::move(tableInfo)}, sourceNodeTables{std::move(sourceNodeTables)},
+          sourceNodeScanInfo{DataPos::getInvalidPos(), {}}, sourceMode{true} {}
+
+    ScanRelTable(ScanOpInfo info, ScanRelTableInfo tableInfo,
+        std::vector<ScanNodeTableInfo> sourceNodeTableInfos,
+        std::vector<std::shared_ptr<ScanNodeTableSharedState>> sourceNodeSharedStates,
+        std::shared_ptr<ScanNodeTableProgressSharedState> sourceNodeProgressSharedState,
+        ScanOpInfo sourceNodeScanInfo, physical_op_id id, std::unique_ptr<OPPrintInfo> printInfo,
+        PhysicalOperatorType operatorType = type_)
+        : ScanTable{operatorType, std::move(info), id, std::move(printInfo)},
+          tableInfo{std::move(tableInfo)}, sourceNodeTableInfos{std::move(sourceNodeTableInfos)},
+          sourceNodeSharedStates{std::move(sourceNodeSharedStates)},
+          sourceNodeProgressSharedState{std::move(sourceNodeProgressSharedState)},
+          sourceNodeScanInfo{std::move(sourceNodeScanInfo)}, sourceMode{true},
+          sourceNodeScanMode{true} {}
+
+    bool isSource() const override { return sourceMode; }
+    bool isParallel() const override { return !sourceMode; }
+
+    void initLocalStateInternal(ResultSet* resultSet, ExecutionContext* context) override;
+
+    bool getNextTuplesInternal(ExecutionContext* context) override;
+
+    std::unique_ptr<PhysicalOperator> copy() override {
+        std::unique_ptr<ScanRelTable> result;
+        if (sourceMode) {
+            if (sourceNodeScanMode) {
+                result = std::make_unique<ScanRelTable>(opInfo.copy(), tableInfo.copy(),
+                    copyVector(sourceNodeTableInfos), sourceNodeSharedStates,
+                    sourceNodeProgressSharedState, sourceNodeScanInfo.copy(), id, printInfo->copy(),
+                    operatorType);
+            } else {
+                result = std::make_unique<ScanRelTable>(opInfo.copy(), tableInfo.copy(),
+                    sourceNodeTables, id, printInfo->copy(), operatorType);
+            }
+        } else {
+            result = std::make_unique<ScanRelTable>(opInfo.copy(), tableInfo.copy(),
+                children[0]->copy(), id, printInfo->copy(), operatorType);
+        }
+        result->multiParentPackedScanEnabled = multiParentPackedScanEnabled;
+        result->nbrNodeMaskMap = nbrNodeMaskMap;
+        return result;
+    }
+
+protected:
+    void initGlobalStateInternal(ExecutionContext* context) override;
+    bool fetchNextBoundNodeBatch(transaction::Transaction* transaction);
+    void updatePackedChildSlices(common::sel_t outputSize) const;
+
+    // Multi-parent packed batches (see docs/multi_parent_lifetime.md). Disabled by default:
+    // standard consumers of the packed extend output rely on the one-parent-per-batch
+    // factorization contract (bound vector flat with selSize 1). Only packed-aware consumers
+    // (currently PackedFilteredCount, which reads the PackedChildSlices descriptor) enable
+    // this, via setMultiParentPackedScanEnabled(), so the CSR scan may pack children of many
+    // parents into one output batch.
+    bool multiParentPackedScanEnabled = false;
+
+public:
+    void setMultiParentPackedScanEnabled(bool enabled) { multiParentPackedScanEnabled = enabled; }
+
+    // Semi mask on the neighbour node (outVectors[0]). Created at map time for every
+    // extend that scans the nbr ID; enabled (populated) only when a hash-join SIP
+    // SemiMasker targets this operator. Shared across plan copies so every copy filters
+    // by the same masks, mirroring ScanNodeTableSharedState behaviour.
+    void setNbrNodeMaskMap(std::shared_ptr<common::NodeOffsetMaskMap> maskMap) {
+        nbrNodeMaskMap = std::move(maskMap);
+    }
+    common::table_id_map_t<common::SemiMask*> getNbrNodeMasks() const {
+        if (nbrNodeMaskMap == nullptr) {
+            return {};
+        }
+        return nbrNodeMaskMap->getMasks();
+    }
+
+protected:
+    // Thin wrappers over the shared ScanTable helpers; ScanRelTable additionally skips
+    // filtering for multi-parent packed batches (packed output violates the one-parent-
+    // per-batch contract the filter assumes).
+    common::sel_t applyNbrNodeMask();
+    void refreshNbrMaskCache();
+    std::shared_ptr<common::NodeOffsetMaskMap> nbrNodeMaskMap;
+
+    ScanRelTableInfo tableInfo;
+    std::unique_ptr<storage::RelTableScanState> scanState;
+    std::vector<storage::NodeTable*> sourceNodeTables;
+    std::vector<ScanNodeTableInfo> sourceNodeTableInfos;
+    std::vector<std::shared_ptr<ScanNodeTableSharedState>> sourceNodeSharedStates;
+    std::shared_ptr<ScanNodeTableProgressSharedState> sourceNodeProgressSharedState;
+    ScanOpInfo sourceNodeScanInfo;
+    std::unique_ptr<storage::TableScanState> sourceNodeScanState;
+    std::vector<common::ValueVector*> sourceNodeOutVectors;
+    bool sourceMode = false;
+    bool sourceNodeScanMode = false;
+    common::idx_t currentSourceTableIdx = 0;
+    common::offset_t nextSourceOffset = 0;
+    common::row_idx_t currentSourceTableNumRows = 0;
+};
+
+} // namespace processor
+} // namespace lbug

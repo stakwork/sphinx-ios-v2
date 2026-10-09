@@ -1,0 +1,382 @@
+#include "binder/binder.h"
+#include "binder/expression/property_expression.h"
+#include "binder/expression_binder.h"
+#include "catalog/catalog.h"
+#include "common/constants.h"
+#include "common/enums/extend_direction_util.h"
+#include "common/mask.h"
+#include "main/attached_database.h"
+#include "main/client_context.h"
+#include "main/database_manager.h"
+#include "planner/operator/extend/logical_extend.h"
+#include "planner/operator/scan/logical_scan_node_table.h"
+#include "processor/operator/scan/scan_multi_rel_tables.h"
+#include "processor/operator/scan/scan_rel_table.h"
+#include "processor/plan_mapper.h"
+#include "storage/partition_storage_registry.h"
+#include "storage/storage_manager.h"
+#include "storage/table/ice_disk_rel_table.h"
+#include "storage/table/node_table.h"
+
+using namespace lbug::binder;
+using namespace lbug::common;
+using namespace lbug::planner;
+using namespace lbug::storage;
+using namespace lbug::catalog;
+
+namespace lbug {
+namespace processor {
+
+// Resolve the storage manager that owns a rel table belonging to dbName. Empty dbName
+// means the main database; otherwise look up the attached lbug database's storage
+// manager. Extension-backed attached databases cannot be scanned through a local
+// StorageManager, so those raise a clear error.
+static storage::StorageManager* getRelStorageManager(main::ClientContext* clientContext,
+    const std::string& dbName) {
+    if (dbName.empty()) {
+        return storage::StorageManager::Get(*clientContext);
+    }
+    auto* attachedDB = main::DatabaseManager::Get(*clientContext)->getAttachedDatabase(dbName);
+    if (attachedDB->getDBType() != common::ATTACHED_LBUG_DB_TYPE) {
+        throw common::RuntimeException(std::format(
+            "Relationship pattern over attached database {} is not supported.", dbName));
+    }
+    auto* attachedLbug = static_cast<main::AttachedLbugDatabase*>(attachedDB);
+    return attachedLbug->getStorageManager();
+}
+
+static ScanRelTableInfo getRelTableScanInfo(const TableCatalogEntry& tableEntry,
+    RelDataDirection direction, RelTable* relTable, bool shouldScanNbrID,
+    const expression_vector& properties, const std::vector<ColumnPredicateSet>& columnPredicates,
+    main::ClientContext* clientContext) {
+    std::vector<ColumnPredicateSet> columnPredicateSets = copyVector(columnPredicates);
+    if (!columnPredicateSets.empty()) {
+        // Since we insert a nbr column. We need to pad an empty nbr column predicate set.
+        columnPredicateSets.insert(columnPredicateSets.begin(), ColumnPredicateSet());
+    }
+    auto tableInfo = ScanRelTableInfo(relTable, std::move(columnPredicateSets), direction);
+    // We always should scan nbrID from relTable. This is not a property in the schema label, so
+    // cannot be bound to a column in the front-end.
+    auto nbrColumnID = shouldScanNbrID ? NBR_ID_COLUMN_ID : INVALID_COLUMN_ID;
+    tableInfo.addColumnInfo(nbrColumnID, ColumnCaster(LogicalType::INTERNAL_ID()));
+    auto binder = Binder(clientContext);
+    auto expressionBinder = ExpressionBinder(&binder, clientContext);
+    for (auto& expr : properties) {
+        auto& property = expr->constCast<PropertyExpression>();
+        if (property.hasProperty(tableEntry.getTableID())) {
+            auto propertyName = property.getPropertyName();
+            if (!tableEntry.containsProperty(propertyName) && tableEntry.containsProperty("data")) {
+                auto columnCaster = ColumnCaster(LogicalType::JSON());
+                columnCaster.setJSONExtract(propertyName);
+                tableInfo.addColumnInfo(tableEntry.getColumnID("data"), std::move(columnCaster));
+                continue;
+            }
+            auto& columnType = tableEntry.getProperty(propertyName).getType();
+            auto columnCaster = ColumnCaster(columnType.copy());
+            if (property.getDataType() != columnType) {
+                auto columnExpr = std::make_shared<PropertyExpression>(property);
+                columnExpr->dataType = columnType.copy();
+                columnCaster.setCastExpr(
+                    expressionBinder.forceCast(columnExpr, property.getDataType()));
+            }
+            tableInfo.addColumnInfo(tableEntry.getColumnID(propertyName), std::move(columnCaster));
+        } else {
+            tableInfo.addColumnInfo(INVALID_COLUMN_ID, ColumnCaster(LogicalType::ANY()));
+        }
+    }
+    return tableInfo;
+}
+
+static bool isRelTableQualifies(ExtendDirection direction, table_id_t srcTableID,
+    table_id_t dstTableID, table_id_t boundNodeTableID, const table_id_set_t& nbrTableISet) {
+    switch (direction) {
+    case ExtendDirection::FWD: {
+        return srcTableID == boundNodeTableID && nbrTableISet.contains(dstTableID);
+    }
+    case ExtendDirection::BWD: {
+        return dstTableID == boundNodeTableID && nbrTableISet.contains(srcTableID);
+    }
+    default:
+        UNREACHABLE_CODE;
+    }
+}
+
+static std::vector<ScanRelTableInfo> populateRelTableCollectionScanner(table_id_t boundNodeTableID,
+    const table_id_set_t& nbrTableISet, const RelGroupCatalogEntry& entry,
+    ExtendDirection extendDirection, bool shouldScanNbrID, const expression_vector& properties,
+    const std::vector<ColumnPredicateSet>& columnPredicates, const std::string& dbName,
+    main::ClientContext* clientContext) {
+    std::vector<ScanRelTableInfo> scanInfos;
+    const auto storageManager = getRelStorageManager(clientContext, dbName);
+    for (auto& info : entry.getRelEntryInfos()) {
+        auto srcTableID = info.nodePair.srcTableID;
+        auto dstTableID = info.nodePair.dstTableID;
+        auto relTable = storageManager->getTable(info.oid)->ptrCast<RelTable>();
+        switch (extendDirection) {
+        case ExtendDirection::FWD: {
+            if (isRelTableQualifies(ExtendDirection::FWD, srcTableID, dstTableID, boundNodeTableID,
+                    nbrTableISet)) {
+                scanInfos.push_back(getRelTableScanInfo(entry, RelDataDirection::FWD, relTable,
+                    shouldScanNbrID, properties, columnPredicates, clientContext));
+            }
+        } break;
+        case ExtendDirection::BWD: {
+            if (isRelTableQualifies(ExtendDirection::BWD, srcTableID, dstTableID, boundNodeTableID,
+                    nbrTableISet)) {
+                scanInfos.push_back(getRelTableScanInfo(entry, RelDataDirection::BWD, relTable,
+                    shouldScanNbrID, properties, columnPredicates, clientContext));
+            }
+        } break;
+        case ExtendDirection::BOTH: {
+            if (isRelTableQualifies(ExtendDirection::FWD, srcTableID, dstTableID, boundNodeTableID,
+                    nbrTableISet)) {
+                scanInfos.push_back(getRelTableScanInfo(entry, RelDataDirection::FWD, relTable,
+                    shouldScanNbrID, properties, columnPredicates, clientContext));
+            }
+            if (isRelTableQualifies(ExtendDirection::BWD, srcTableID, dstTableID, boundNodeTableID,
+                    nbrTableISet)) {
+                scanInfos.push_back(getRelTableScanInfo(entry, RelDataDirection::BWD, relTable,
+                    shouldScanNbrID, properties, columnPredicates, clientContext));
+            }
+        } break;
+        default:
+            UNREACHABLE_CODE;
+        }
+    }
+    return scanInfos;
+}
+
+static bool scanSingleRelTable(const RelExpression& rel, const NodeExpression& boundNode,
+    ExtendDirection extendDirection) {
+    return !rel.isMultiLabeled() && !boundNode.isMultiLabeled() &&
+           extendDirection != ExtendDirection::BOTH;
+}
+
+// Nbr-node semi masks backing hash-join SIP on extend output (SemiMaskTargetType::
+// EXTEND_NBR_NODE). One mask per nbr node table, filled by a SemiMasker on the other
+// side of the join. Unconditionally created (like ScanNodeTable masks) but left
+// disabled until a SemiMasker targets this extend; while disabled the scan ignores them.
+// No mask is created when the extend does not scan the nbr ID, since outVectors[0]
+// would not hold neighbour IDs to filter on.
+static std::shared_ptr<NodeOffsetMaskMap> createNbrNodeMaskMap(PlanMapper* mapper,
+    const NodeExpression& nbrNode, bool shouldScanNbrID) {
+    if (!shouldScanNbrID) {
+        return nullptr;
+    }
+    auto maskMap = std::make_shared<NodeOffsetMaskMap>();
+    for (auto tableID : nbrNode.getTableIDs()) {
+        maskMap->addMask(tableID, mapper->createSemiMask(tableID));
+    }
+    return maskMap;
+}
+
+static ScanNodeTableInfo getNodeTableScanInfo(const LogicalScanNodeTable& scan,
+    storage::NodeTable* table, const catalog::TableCatalogEntry* tableEntry,
+    main::ClientContext* clientContext) {
+    auto tableInfo = ScanNodeTableInfo(table, copyVector(scan.getPropertyPredicates()));
+    auto binder = Binder(clientContext);
+    auto expressionBinder = ExpressionBinder(&binder, clientContext);
+    for (auto& expr : scan.getProperties()) {
+        auto& property = expr->constCast<PropertyExpression>();
+        if (property.hasProperty(tableEntry->getTableID())) {
+            auto propertyName = property.getPropertyName();
+            if (!tableEntry->containsProperty(propertyName) &&
+                tableEntry->containsProperty("data")) {
+                auto columnCaster = ColumnCaster(LogicalType::JSON());
+                columnCaster.setJSONExtract(propertyName);
+                tableInfo.addColumnInfo(tableEntry->getColumnID("data"), std::move(columnCaster));
+                continue;
+            }
+            auto& columnType = tableEntry->getProperty(propertyName).getType();
+            auto columnCaster = ColumnCaster(columnType.copy());
+            if (property.getDataType() != columnType) {
+                auto columnExpr = std::make_shared<PropertyExpression>(property);
+                columnExpr->dataType = columnType.copy();
+                columnCaster.setCastExpr(
+                    expressionBinder.forceCast(columnExpr, property.getDataType()));
+            }
+            tableInfo.addColumnInfo(tableEntry->getColumnID(propertyName), std::move(columnCaster));
+        } else {
+            tableInfo.addColumnInfo(INVALID_COLUMN_ID, ColumnCaster(LogicalType::ANY()));
+        }
+    }
+    return tableInfo;
+}
+
+std::unique_ptr<PhysicalOperator> PlanMapper::mapExtend(const LogicalOperator* logicalOperator) {
+    auto extend = logicalOperator->constPtrCast<LogicalExtend>();
+    auto outFSchema = extend->getSchema();
+    auto inFSchema = extend->getChild(0)->getSchema();
+    auto boundNode = extend->getBoundNode();
+    auto nbrNode = extend->getNbrNode();
+    auto rel = extend->getRel();
+    auto extendDirection = extend->getDirection();
+    const auto physicalOperatorType =
+        logicalOperator->getOperatorType() == LogicalOperatorType::PACKED_EXTEND ?
+            PhysicalOperatorType::PACKED_EXTEND :
+            PhysicalOperatorType::SCAN_REL_TABLE;
+    auto prevOperator = mapOperator(logicalOperator->getChild(0).get());
+    auto inNodeIDPos = getDataPos(*boundNode->getInternalID(), *inFSchema);
+    std::vector<DataPos> outVectorsPos;
+    auto outNodeIDPos = getDataPos(*nbrNode->getInternalID(), *outFSchema);
+    outVectorsPos.push_back(outNodeIDPos);
+    for (auto& expression : extend->getProperties()) {
+        outVectorsPos.push_back(getDataPos(*expression, *outFSchema));
+    }
+    auto scanInfo = ScanOpInfo(inNodeIDPos, outVectorsPos);
+    std::vector<std::string> tableNames;
+    for (auto entry : rel->getEntries()) {
+        tableNames.push_back(entry->getName());
+    }
+    auto printInfo = std::make_unique<ScanRelTablePrintInfo>(tableNames, extend->getProperties(),
+        boundNode, rel, nbrNode, extendDirection, rel->getVariableName());
+    if (scanSingleRelTable(*rel, *boundNode, extendDirection)) {
+        DASSERT(rel->getNumEntries() == 1);
+        auto entry = rel->getEntry(0)->ptrCast<RelGroupCatalogEntry>();
+        auto relDataDirection = ExtendDirectionUtil::getRelDataDirection(extendDirection);
+        auto entryInfo = entry->getSingleRelEntryInfo();
+        // Resolve the storage manager that owns this rel table: main by default, or
+        // the attached database recorded on the rel entry for attached rels.
+        auto relStorageManager = getRelStorageManager(clientContext, rel->getDbName(entry));
+        auto relTable = relStorageManager->getTable(entryInfo.oid)->ptrCast<RelTable>();
+        auto scanRelInfo =
+            getRelTableScanInfo(*entry, relDataDirection, relTable, extend->shouldScanNbrID(),
+                extend->getProperties(), extend->getPropertyPredicates(), clientContext);
+        if (logicalOperator->getChild(0)->getOperatorType() ==
+            LogicalOperatorType::SCAN_NODE_TABLE) {
+            auto* scanNode = logicalOperator->getChild(0)->ptrCast<LogicalScanNodeTable>();
+            if (scanNode->getScanType() == LogicalScanNodeTableType::SCAN) {
+                std::vector<NodeTable*> sourceNodeTables;
+                std::vector<ScanNodeTableInfo> sourceNodeTableInfos;
+                std::vector<std::shared_ptr<ScanNodeTableSharedState>> sourceNodeSharedStates;
+                auto expectedBoundTableID = relDataDirection == RelDataDirection::FWD ?
+                                                relTable->getFromNodeTableID() :
+                                                relTable->getToNodeTableID();
+                auto transaction = transaction::Transaction::Get(*clientContext);
+                auto& nodeDBMap = scanNode->getTableDBMap();
+                for (auto tableID : scanNode->getTableIDs()) {
+                    if (tableID == expectedBoundTableID) {
+                        // Route each source node table to its owning storage manager/catalog
+                        // (main or the attached database recorded on the scan). Only native
+                        // LBUG attached databases participate in this routing; foreign node
+                        // tables (sqlite/duckdb/postgres) are registered in the main storage
+                        // manager/catalog and keep the pre-attach path.
+                        auto dbName =
+                            nodeDBMap.contains(tableID) ? nodeDBMap.at(tableID) : std::string{};
+                        catalog::Catalog* cat = nullptr;
+                        storage::StorageManager* sm = nullptr;
+                        if (!dbName.empty()) {
+                            auto* attachedDB = main::DatabaseManager::Get(*clientContext)
+                                                   ->getAttachedDatabase(dbName);
+                            if (attachedDB->getDBType() == common::ATTACHED_LBUG_DB_TYPE) {
+                                auto [cat2, sm2] = main::DatabaseManager::resolveTableStorage(
+                                    *clientContext, tableID, dbName);
+                                cat = cat2;
+                                sm = sm2;
+                            }
+                        }
+                        if (cat == nullptr) {
+                            cat = catalog::Catalog::Get(*clientContext);
+                            sm = storage::StorageManager::Get(*clientContext);
+                        }
+                        auto table = sm->containsTable(tableID) ?
+                                         sm->getTable(tableID)->ptrCast<NodeTable>() :
+                                         storage::PartitionStorageRegistry::resolveNodeTableByID(
+                                             clientContext, tableID)
+                                             ->ptrCast<NodeTable>();
+                        sourceNodeTables.push_back(table);
+                        auto tableEntry = cat->getTableCatalogEntry(transaction, tableID);
+                        sourceNodeTableInfos.push_back(
+                            getNodeTableScanInfo(*scanNode, table, tableEntry, clientContext));
+                        auto semiMask =
+                            SemiMaskUtil::createMask(table->getNumTotalRows(transaction));
+                        sourceNodeSharedStates.push_back(
+                            std::make_shared<ScanNodeTableSharedState>(std::move(semiMask)));
+                    }
+                }
+                if (!sourceNodeTables.empty() && !scanNode->getProperties().empty() &&
+                    dynamic_cast<IceDiskRelTable*>(relTable) != nullptr) {
+                    std::vector<DataPos> sourceOutVectorsPos;
+                    for (auto& expression : scanNode->getProperties()) {
+                        sourceOutVectorsPos.emplace_back(getDataPos(*expression, *inFSchema));
+                    }
+                    auto sourceNodeScanInfo =
+                        ScanOpInfo(inNodeIDPos, std::move(sourceOutVectorsPos));
+                    auto progressSharedState = std::make_shared<ScanNodeTableProgressSharedState>();
+                    auto scanRel =
+                        std::make_unique<ScanRelTable>(std::move(scanInfo), std::move(scanRelInfo),
+                            std::move(sourceNodeTableInfos), std::move(sourceNodeSharedStates),
+                            std::move(progressSharedState), std::move(sourceNodeScanInfo),
+                            getOperatorID(), printInfo->copy(), physicalOperatorType);
+                    scanRel->setNbrNodeMaskMap(
+                        createNbrNodeMaskMap(this, *nbrNode, extend->shouldScanNbrID()));
+                    // The fused scan absorbs the child SCAN_NODE_TABLE, so prevOperator is
+                    // discarded here. Erase its stale mapping: otherwise a later SEMI_MASKER
+                    // targeting the child scan would dereference a dangling pointer (#1068).
+                    eraseOperatorMapping(logicalOperator->getChild(0).get());
+                    return scanRel;
+                }
+                // Only apply the existing no-property optimization if scan node is not already
+                // mapped (e.g., by a semi-masker).
+                if (!sourceNodeTables.empty() &&
+                    !logicalOpToPhysicalOpMap.contains(logicalOperator->getChild(0).get())) {
+                    if (!scanNode->getProperties().empty()) {
+                        auto scanRel = std::make_unique<ScanRelTable>(std::move(scanInfo),
+                            std::move(scanRelInfo), std::move(prevOperator), getOperatorID(),
+                            printInfo->copy(), physicalOperatorType);
+                        scanRel->setNbrNodeMaskMap(
+                            createNbrNodeMaskMap(this, *nbrNode, extend->shouldScanNbrID()));
+                        return scanRel;
+                    }
+                    auto sourceScanRel = std::make_unique<ScanRelTable>(std::move(scanInfo),
+                        std::move(scanRelInfo), std::move(sourceNodeTables), getOperatorID(),
+                        printInfo->copy(), physicalOperatorType);
+                    sourceScanRel->setNbrNodeMaskMap(
+                        createNbrNodeMaskMap(this, *nbrNode, extend->shouldScanNbrID()));
+                    // Same as the fused ice-disk branch above: the child scan's physical
+                    // operator is discarded, so erase its stale mapping (#1068).
+                    eraseOperatorMapping(logicalOperator->getChild(0).get());
+                    return sourceScanRel;
+                }
+            }
+        }
+        auto scanRel = std::make_unique<ScanRelTable>(std::move(scanInfo), std::move(scanRelInfo),
+            std::move(prevOperator), getOperatorID(), printInfo->copy(), physicalOperatorType);
+        scanRel->setNbrNodeMaskMap(createNbrNodeMaskMap(this, *nbrNode, extend->shouldScanNbrID()));
+        return scanRel;
+    }
+    // map to generic extend
+    auto directionInfo = DirectionInfo();
+    directionInfo.extendFromSource = extend->extendFromSourceNode();
+    if (rel->hasDirectionExpr()) {
+        directionInfo.directionPos = getDataPos(*rel->getDirectionExpr(), *outFSchema);
+    }
+    table_id_map_t<RelTableCollectionScanner> scanners;
+    for (auto boundNodeTableID : boundNode->getTableIDs()) {
+        for (auto entry : rel->getEntries()) {
+            auto& relGroupEntry = entry->constCast<RelGroupCatalogEntry>();
+            auto scanInfos = populateRelTableCollectionScanner(boundNodeTableID,
+                nbrNode->getTableIDsSet(), relGroupEntry, extendDirection,
+                extend->shouldScanNbrID(), extend->getProperties(), extend->getPropertyPredicates(),
+                rel->getDbName(entry), clientContext);
+            if (scanInfos.empty()) {
+                continue;
+            }
+            if (scanners.contains(boundNodeTableID)) {
+                scanners.at(boundNodeTableID).addRelInfos(std::move(scanInfos));
+            } else {
+                scanners.insert(
+                    {boundNodeTableID, RelTableCollectionScanner(std::move(scanInfos))});
+            }
+        }
+    }
+    auto scanMultiRel = std::make_unique<ScanMultiRelTable>(std::move(scanInfo),
+        std::move(directionInfo), std::move(scanners), std::move(prevOperator), getOperatorID(),
+        printInfo->copy(), physicalOperatorType);
+    scanMultiRel->setNbrNodeMaskMap(
+        createNbrNodeMaskMap(this, *nbrNode, extend->shouldScanNbrID()));
+    return scanMultiRel;
+}
+
+} // namespace processor
+} // namespace lbug
