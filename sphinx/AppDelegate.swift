@@ -79,6 +79,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         AppLogger.shared.start()
         
+        // Opens the personal graph (Ladybug) off the main thread; never blocks launch.
+        PersonalGraph.startInBackground()
+        
         isActive = true
         
         NetworkMonitor.shared.startMonitoring()
