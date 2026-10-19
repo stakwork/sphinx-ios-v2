@@ -463,6 +463,9 @@ final class AIAgentManager: @unchecked Sendable {
         // query_hive_graph's description — see buildQueryHiveGraphTool(ownerNickname:orgs:).
         let ownerNickname: String? = await MainActor.run { UserContact.getOwner()?.nickname }
         let cachedOrgs = AIAgentManager.cachedHiveOrgs()
+        // Per-turn system prompt: the constant systemPrompt stays FIRST and unchanged, the graph
+        // summary is appended after it ("" if the graph is empty/unavailable/slow; never fails the turn).
+        let turnSystemPrompt = systemPrompt + (await graphSummarySection())
 
         var tools: ToolSet = [
             "send_sphinx_message":     buildSendMessageTool().eraseToTool(),
@@ -498,7 +501,8 @@ final class AIAgentManager: @unchecked Sendable {
             "retry_task_workflow":     buildRetryTaskWorkflowTool().eraseToTool(),
             "archive_task":            buildArchiveTaskTool().eraseToTool(),
             "approve_proposal":        buildApproveProposalTool().eraseToTool(),
-            "reject_proposal":         buildRejectProposalTool().eraseToTool()
+            "reject_proposal":         buildRejectProposalTool().eraseToTool(),
+            "recall_personal_knowledge": buildRecallPersonalKnowledgeTool().eraseToTool()
         ]
         switch activeProvider {
         case .anthropic:
@@ -514,7 +518,7 @@ final class AIAgentManager: @unchecked Sendable {
             result = try await generateText(
                 model: model,
                 tools: tools,
-                system: systemPrompt,
+                system: turnSystemPrompt,
                 messages: conversationHistory,
                 stopWhen: [stepCountIs(10)]
             )
@@ -566,6 +570,16 @@ final class AIAgentManager: @unchecked Sendable {
         conversationHistory.append(.assistant(responseText))
         saveHistory()
         isProcessing = false
+
+        // Fire-and-forget: runs after the answer is returned, the user does not wait for it.
+        // The error path above returns earlier and never extracts.
+        scheduleGraphExtraction(
+            model: model,
+            userText: userText,
+            assistantText: responseText,
+            toolNames: allToolNames,
+            didFail: false
+        )
         return responseText
     }
 

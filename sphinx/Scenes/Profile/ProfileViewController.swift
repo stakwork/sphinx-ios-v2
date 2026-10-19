@@ -41,6 +41,10 @@ class ProfileViewController: NewKeyboardHandlerViewController {
     @IBOutlet weak var changePINContainerView: UIView!
     @IBOutlet weak var setGithubPATContainerView: UIView!
     @IBOutlet weak var configureAIAgentContainerView: UIView!
+    
+    // Code-built row under the AI Agent row (not in the storyboard); see configureGraphExtractionRow().
+    private var graphExtractionContainerView: UIView?
+    private var graphExtractionSwitch: UISwitch?
     @IBOutlet weak var uploadingLabel: UILabel!
     @IBOutlet weak var uploadLoadingWheel: UIActivityIndicatorView!
     @IBOutlet weak var contentScrollView: UIScrollView!
@@ -114,6 +118,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         
         exportKeyButton.layer.cornerRadius = exportKeyButton.frame.height / 2
         
+        configureGraphExtractionRow()
         setShadows()
         configureFields()
         configureProfile()
@@ -121,6 +126,68 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         showStorageSpinner()
         configureBalanceTap()
         updateTimezoneLabel()
+    }
+    
+    /// Adds the "Remember things from AI agent chats" row directly under the AI Agent row.
+    /// The storyboard's row container has a fixed 590pt height constraint and the AI Agent row is
+    /// its last subview, so the container height is grown by the new row + 10pt gap. If that
+    /// constraint can't be found (storyboard changed) the row is NOT added, so layout never breaks.
+    private func configureGraphExtractionRow() {
+        guard graphExtractionContainerView == nil,
+              let rowsContainer = configureAIAgentContainerView.superview,
+              let heightConstraint = rowsContainer.constraints.first(where: {
+                  $0.firstItem === rowsContainer && $0.secondItem == nil &&
+                  $0.firstAttribute == .height && $0.constant == 590
+              }) else { return }
+        
+        let rowHeight: CGFloat = 80
+        let gap: CGFloat = 10
+        
+        let row = UIView()
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.backgroundColor = UIColor.Sphinx.Body
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Remember things from AI agent chats"
+        label.font = UIFont(name: "Roboto-Regular", size: 17.0)
+        label.textColor = UIColor.Sphinx.Text
+        label.numberOfLines = 0
+        
+        let toggle = UISwitch()
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        toggle.onTintColor = UIColor.Sphinx.PrimaryBlue
+        toggle.isOn = GraphExtractionSettings.isEnabled()
+        toggle.setContentHuggingPriority(.required, for: .horizontal)
+        toggle.setContentCompressionResistancePriority(.required, for: .horizontal)
+        toggle.addTarget(self, action: #selector(graphExtractionSwitchChanged(_:)), for: .valueChanged)
+        
+        row.addSubview(label)
+        row.addSubview(toggle)
+        rowsContainer.addSubview(row)
+        
+        // Same 30pt side inset the switch rows use inside their card.
+        NSLayoutConstraint.activate([
+            row.leadingAnchor.constraint(equalTo: rowsContainer.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: rowsContainer.trailingAnchor),
+            row.topAnchor.constraint(equalTo: configureAIAgentContainerView.bottomAnchor, constant: gap),
+            row.heightAnchor.constraint(equalToConstant: rowHeight),
+            label.leadingAnchor.constraint(equalTo: row.leadingAnchor, constant: 30),
+            label.centerYAnchor.constraint(equalTo: row.centerYAnchor),
+            toggle.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 24.5),
+            toggle.trailingAnchor.constraint(equalTo: row.trailingAnchor, constant: -30),
+            toggle.centerYAnchor.constraint(equalTo: row.centerYAnchor)
+        ])
+        
+        heightConstraint.constant += rowHeight + gap
+        
+        graphExtractionContainerView = row
+        graphExtractionSwitch = toggle
+    }
+    
+    /// Gates ONLY extraction (writes to the personal graph); recall/summary keep working.
+    @objc private func graphExtractionSwitchChanged(_ sender: UISwitch) {
+        GraphExtractionSettings.setEnabled(sender.isOn)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -136,6 +203,7 @@ class ProfileViewController: NewKeyboardHandlerViewController {
         exportKeysContainer.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         changePINContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         configureAIAgentContainerView.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
+        graphExtractionContainerView?.addShadow(location: VerticalLocation.center, color: UIColor.black, opacity: 0.2, radius: 2.0)
         
         setStatusBarColor()
     }

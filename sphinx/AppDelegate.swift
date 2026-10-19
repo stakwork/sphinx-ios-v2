@@ -79,6 +79,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         AppLogger.shared.start()
         
+        // Registers the default (ON) for the "Remember things from AI agent chats" setting so it
+        // is already true before anything reads it. Must run before the graph pipeline is used.
+        GraphExtractionSettings.registerDefaults()
+        
         // Opens the personal graph (Ladybug) off the main thread; never blocks launch.
         PersonalGraph.startInBackground()
         
