@@ -5463,8 +5463,8 @@
 				473873AC2CD906C500CBBC28 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				4730EF432CDA91CF0014581F /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				47B3B4CB2F8460B400317A05 /* XCRemoteSwiftPackageReference "swift-ai-sdk" */,
-				CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */,
-				5FED883D307EE78FFA4B2DDA /* XCLocalSwiftPackageReference "swift-ladybug" */,
+				CESER001000000000000AAAA /* XCLocalSwiftPackageReference "LocalPackages/SphinxErrorReporter" */,
+				5FED883D307EE78FFA4B2DDA /* XCLocalSwiftPackageReference "LocalPackages/swift-ladybug" */,
 			);
 			productRefGroup = 4779F15F232AA0F200D35E81 /* Products */;
 			projectDirPath = "";
@@ -7850,11 +7850,11 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		5FED883D307EE78FFA4B2DDA /* XCLocalSwiftPackageReference "swift-ladybug" */ = {
+		5FED883D307EE78FFA4B2DDA /* XCLocalSwiftPackageReference "LocalPackages/swift-ladybug" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "LocalPackages/swift-ladybug";
 		};
-		CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */ = {
+		CESER001000000000000AAAA /* XCLocalSwiftPackageReference "LocalPackages/SphinxErrorReporter" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LocalPackages/SphinxErrorReporter;
 		};
@@ -7890,7 +7890,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		217BC920EEEDBE77A239BFE8 /* Ladybug */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 5FED883D307EE78FFA4B2DDA /* XCLocalSwiftPackageReference "swift-ladybug" */;
+			package = 5FED883D307EE78FFA4B2DDA /* XCLocalSwiftPackageReference "LocalPackages/swift-ladybug" */;
 			productName = Ladybug;
 		};
 		4730EF442CDA91CF0014581F /* SFSafeSymbols */ = {
@@ -7920,7 +7920,7 @@
 		};
 		CESER002000000000000BBBB /* SphinxErrorReporter */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CESER001000000000000AAAA /* XCLocalSwiftPackageReference "SphinxErrorReporter" */;
+			package = CESER001000000000000AAAA /* XCLocalSwiftPackageReference "LocalPackages/SphinxErrorReporter" */;
 			productName = SphinxErrorReporter;
 		};
 /* End XCSwiftPackageProductDependency section */
