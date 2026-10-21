@@ -127,6 +127,16 @@ class NewChatViewModel {
                     possibleMentions.append(alias)
                 }
             }
+            
+            if self.chat?.isGroup() == true,
+               let agentName = AIAgentManager.personalAgentName() {
+                let token = AIAgentManager.mentionToken(forAgentName: agentName)
+                if mentionText.count <= token.count,
+                   token.lowercased().hasPrefix(mentionText.lowercased()),
+                   !possibleMentions.contains(where: { $0.0 == token }) {
+                    possibleMentions.append((token, ""))
+                }
+            }
         }
         
         return possibleMentions
