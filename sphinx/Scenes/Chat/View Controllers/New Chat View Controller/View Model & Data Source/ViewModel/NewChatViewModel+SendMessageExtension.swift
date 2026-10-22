@@ -81,6 +81,10 @@ extension NewChatViewModel {
         
         if let message = validMessage {
             joinIfCallMessage(message: message)
+            
+            if type == TransactionMessage.TransactionMessageType.message.rawValue {
+                AIAgentManager.sharedInstance.forwardTribeMentionIfNeeded(text: text, tribeChat: chat)
+            }
         }
         
         resetReply()
