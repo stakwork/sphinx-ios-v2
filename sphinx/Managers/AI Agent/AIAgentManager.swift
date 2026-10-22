@@ -440,7 +440,14 @@ final class AIAgentManager: @unchecked Sendable {
         return activeModel != nil
     }
 
-    func chat(_ userText: String) async -> String {
+    /// - Parameter canSendMessages: false for a tribe mention forwarded to the agent
+    ///   (`forwardTribeMentionIfNeeded`): without `send_sphinx_message` in its toolset the
+    ///   model has no way to post into the tribe itself, so its answer always comes back
+    ///   as plain text for `handleAgentReply` to route and send — the only path that gives
+    ///   a public reply the "Tom / Agent Name" alias. With the tool offered, the model was
+    ///   free to call it directly instead of following the ROUTE: PUBLIC/PRIVATE protocol,
+    ///   posting under the plain owner alias and skipping our routing entirely.
+    func chat(_ userText: String, canSendMessages: Bool = true) async -> String {
         // Re-attempt configuration if activeModel is nil (e.g. first call after login)
         if activeModel == nil { reconfigure() }
         guard let model = activeModel else {
@@ -465,7 +472,6 @@ final class AIAgentManager: @unchecked Sendable {
         let cachedOrgs = AIAgentManager.cachedHiveOrgs()
 
         var tools: ToolSet = [
-            "send_sphinx_message":     buildSendMessageTool().eraseToTool(),
             "read_recent_messages":    buildReadMessagesTool().eraseToTool(),
             "read_unseen_messages":    buildReadUnseenMessagesTool().eraseToTool(),
             "read_threads":            buildReadThreadsTool().eraseToTool(),
@@ -500,6 +506,9 @@ final class AIAgentManager: @unchecked Sendable {
             "approve_proposal":        buildApproveProposalTool().eraseToTool(),
             "reject_proposal":         buildRejectProposalTool().eraseToTool()
         ]
+        if canSendMessages {
+            tools["send_sphinx_message"] = buildSendMessageTool().eraseToTool()
+        }
         switch activeProvider {
         case .anthropic:
             tools["web_search"] = anthropicTools.webSearch20250305(.init(maxUses: 5))
@@ -1689,7 +1698,8 @@ extension AIAgentManager {
             me", "DM me"), always reply privately, even if the question would otherwise read as public.
 
             Start your reply with exactly one line, "ROUTE: PUBLIC" or "ROUTE: PRIVATE", nothing else on it, then a \
-            blank line, then your answer with nothing else before it.
+            blank line, then your answer with nothing else before it. You have no way to post into the tribe \
+            yourself here — answering this way is what gets your reply there (or to me privately).
             """
     }
 
@@ -1764,7 +1774,7 @@ extension AIAgentManager {
 
         Task { [weak self] in
             guard let self = self else { return }
-            let reply = await self.chat(prompt)
+            let reply = await self.chat(prompt, canSendMessages: false)
             await MainActor.run {
                 self.handleAgentReply(reply, for: request, agentName: agentName)
             }
