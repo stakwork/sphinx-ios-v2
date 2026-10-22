@@ -1652,9 +1652,11 @@ extension AIAgentManager {
         return name
     }
 
-    /// Mentions can't contain spaces, so the mention token is the name without whitespace.
+    /// Mentions can't contain spaces, so the mention token joins the name's words with
+    /// "_", the same convention as any other multi-word alias here (`fixedAlias`,
+    /// `agentAliasSuffix`): "Sphinx Agent 2" mentions as "@Sphinx_Agent_2".
     static func mentionToken(forAgentName name: String) -> String {
-        return name.components(separatedBy: .whitespacesAndNewlines).joined()
+        return name.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: "_")
     }
 
     static func text(_ text: String, mentionsAgentNamed name: String) -> Bool {
