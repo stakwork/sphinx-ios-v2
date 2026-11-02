@@ -114,6 +114,42 @@ class UserData {
         UserDefaults.Keys.pinHours.set(hours)
     }
     
+    /// Tolerant parse of a raw pin timeout: trims whitespace, accepts integral doubles ("25.0").
+    /// Returns nil for empty, text, NaN, inf, or non-integral values.
+    static func parsePinTimeout(_ raw: String) -> Int? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nil }
+        if let intValue = Int(trimmed) { return intValue }
+        guard let d = Double(trimmed), d.isFinite, d == d.rounded(), abs(d) < 1e15 else {
+            return nil
+        }
+        return Int(d)
+    }
+    
+    /// Clamps to 0...Constants.kMaxPinTimeoutValue.
+    static func clampedPinTimeout(_ value: Int) -> Int {
+        return min(max(value, 0), Constants.kMaxPinTimeoutValue)
+    }
+    
+    /// Parses and clamps a raw synced value. Returns nil for garbage.
+    static func clampedPinTimeout(fromRaw raw: String) -> Int? {
+        return parsePinTimeout(raw).map { clampedPinTimeout($0) }
+    }
+    
+    /// Applies an incoming synced pin timeout, mirroring the slider's side effects
+    /// without saving back to sync. Returns the applied value, 
+    @discardableResult
+    func applySyncedPinTimeout(_ value: Int) -> Int {
+        let hours = UserData.clampedPinTimeout(value)
+        setPINHours(hours: hours)
+        if hours != Constants.kMaxPinTimeoutValue {
+            if !UserDefaults.Keys.biometricAuthEnabled.get(defaultValue: false) {
+                clearAutoLoginPin()
+            }
+        }
+        return hours
+    }
+    
     func getUserId(
         context: NSManagedObjectContext? = nil
     ) -> Int {

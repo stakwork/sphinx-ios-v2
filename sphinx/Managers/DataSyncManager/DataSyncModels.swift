@@ -269,7 +269,7 @@ enum SettingValue: Codable {
         switch key {
         case .tipAmount:
             // tip_amount is always an Int
-            guard let intValue = Int(string) else {
+            guard let intValue = UserData.parsePinTimeout(string) else {
                 #if DEBUG
                 print("DataSync: Failed to parse '\(string)' as Int for \(key.rawValue)")
                 #endif
