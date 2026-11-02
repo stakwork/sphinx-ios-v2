@@ -528,7 +528,7 @@ class DataSyncManager: NSObject, @unchecked Sendable {
 
             case .pinTimeout:
                 if let intValue = serverItem.value.asInt {
-                    UserData.sharedInstance.setPINHours(hours: intValue)
+                    UserData.sharedInstance.applySyncedPinTimeout(intValue)
                 }
 
             case .biometricEnabled:
