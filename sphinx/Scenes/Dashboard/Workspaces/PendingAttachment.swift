@@ -19,6 +19,7 @@ struct PendingAttachment {
     let filename: String
     let mimeType: String
     let size: Int
+    var isVideo: Bool = false // image is a generated thumbnail when true
     var state: PendingAttachmentState
     var s3Path: String? // populated after successful upload
 }

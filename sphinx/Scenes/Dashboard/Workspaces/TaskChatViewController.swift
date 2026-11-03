@@ -10,6 +10,7 @@ import UIKit
 import AVKit
 import AVFoundation
 import PhotosUI
+import UniformTypeIdentifiers
 import PusherSwift
 
 class TaskChatViewController: UIViewController {
@@ -923,7 +924,7 @@ class TaskChatViewController: UIViewController {
 
     @objc private func attachTapped() {
         var config = PHPickerConfiguration(photoLibrary: .shared())
-        config.filter = .images
+        config.filter = .any(of: [.images, .videos])
         config.selectionLimit = 0 // unlimited
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = self
@@ -2091,11 +2092,99 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
         dismiss(animated: true)
         guard !results.isEmpty else { return }
 
-        let allowedMimes: Set<String> = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-        let maxBytes = 10 * 1024 * 1024 // 10 MB
+        let allowedMimes: Set<String> = [
+            "image/jpeg", "image/png", "image/gif", "image/webp",
+            "video/mp4", "video/quicktime", "video/x-m4v"
+        ]
+        let maxImageBytes = 10 * 1024 * 1024 // 10 MB
+        let maxVideoBytes = 100 * 1024 * 1024 // 100 MB
 
         for result in results {
-            result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
+            let provider = result.itemProvider
+
+            if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+                provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
+                    guard let url = url else {
+                        if let error = error {
+                            print("[TaskChatViewController] failed to load picked video: \(error)")
+                        }
+                        Task { @MainActor [weak self] in
+                            guard let self = self else { return }
+                            AlertHelper.showAlert(
+                                title: "Invalid file",
+                                message: "Could not load the selected video.",
+                                on: self
+                            )
+                        }
+                        return
+                    }
+
+                    // The provided file is deleted when this callback returns, so copy it first.
+                    let ext = url.pathExtension.lowercased()
+                    let tempURL = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("\(UUID().uuidString).\(ext.isEmpty ? "mp4" : ext)")
+                    defer { try? FileManager.default.removeItem(at: tempURL) }
+
+                    let data: Data
+                    do {
+                        try FileManager.default.copyItem(at: url, to: tempURL)
+                        data = try Data(contentsOf: tempURL)
+                    } catch {
+                        print("[TaskChatViewController] failed to read picked video: \(error)")
+                        Task { @MainActor [weak self] in
+                            guard let self = self else { return }
+                            AlertHelper.showAlert(
+                                title: "Invalid file",
+                                message: "Could not load the selected video.",
+                                on: self
+                            )
+                        }
+                        return
+                    }
+
+                    let mimeType: String
+                    let fileExt: String
+                    switch ext {
+                    case "mov":
+                        mimeType = "video/quicktime"
+                        fileExt = "mov"
+                    case "m4v":
+                        mimeType = "video/x-m4v"
+                        fileExt = "m4v"
+                    default:
+                        mimeType = "video/mp4"
+                        fileExt = ext.isEmpty ? "mp4" : ext
+                    }
+                    let filename = "video_\(UUID().uuidString).\(fileExt)"
+                    let size = data.count
+
+                    let generator = AVAssetImageGenerator(asset: AVAsset(url: tempURL))
+                    generator.appliesPreferredTrackTransform = true
+                    generator.maximumSize = CGSize(width: 300, height: 300)
+                    let thumbnail: UIImage
+                    if let cgImage = try? generator.copyCGImage(at: .zero, actualTime: nil) {
+                        thumbnail = UIImage(cgImage: cgImage)
+                    } else {
+                        thumbnail = UIImage()
+                    }
+
+                    Task { @MainActor [weak self] in
+                        self?.addPendingAttachment(
+                            image: thumbnail,
+                            data: data,
+                            filename: filename,
+                            mimeType: mimeType,
+                            isVideo: true,
+                            allowedMimes: allowedMimes,
+                            maxBytes: maxVideoBytes,
+                            limitMessage: "Video exceeds 100 MB limit."
+                        )
+                    }
+                }
+                continue
+            }
+
+            provider.loadObject(ofClass: UIImage.self) { object, error in
                 guard let image = object as? UIImage else {
                     if let error = error {
                         print("[TaskChatViewController] failed to load picked image: \(error)")
@@ -2114,64 +2203,87 @@ extension TaskChatViewController: PHPickerViewControllerDelegate {
                 let mimeType = "image/jpeg"
                 guard let data = image.jpegData(compressionQuality: 0.85) else { return }
                 let filename = "image_\(UUID().uuidString).jpg"
-                let size = data.count
 
                 Task { @MainActor [weak self] in
-                    guard let self = self else { return }
-
-                    guard allowedMimes.contains(mimeType), size <= maxBytes else {
-                        AlertHelper.showAlert(
-                            title: "Invalid file",
-                            message: size > maxBytes ? "File exceeds 10 MB limit." : "Unsupported file type.",
-                            on: self
-                        )
-                        return
-                    }
-
-                    let pending = PendingAttachment(
-                        id: UUID(),
+                    self?.addPendingAttachment(
                         image: image,
+                        data: data,
                         filename: filename,
                         mimeType: mimeType,
-                        size: size,
-                        state: .uploading,
-                        s3Path: nil
-                    )
-                    self.pendingAttachments.append(pending)
-                    self.refreshAttachmentsBar()
-                    self.updateSendButtonState()
-
-                    API.sharedInstance.requestUploadPresignedUrlWithAuth(
-                        taskId: self.task.id,
-                        filename: filename,
-                        contentType: mimeType,
-                        size: size,
-                        callback: { [weak self] presignedUrl, s3Path in
-                            guard let self = self,
-                                  let presignedUrl = presignedUrl,
-                                  let s3Path = s3Path else {
-                                self?.markPending(id: pending.id, state: .failed)
-                                return
-                            }
-                            API.sharedInstance.uploadFileToS3(
-                                presignedUrl: presignedUrl,
-                                data: data,
-                                contentType: mimeType,
-                                callback: { [weak self] in
-                                    self?.markPending(id: pending.id, state: .done, s3Path: s3Path)
-                                },
-                                errorCallback: { [weak self] in
-                                    self?.markPending(id: pending.id, state: .failed)
-                                }
-                            )
-                        },
-                        errorCallback: { [weak self] in
-                            self?.markPending(id: pending.id, state: .failed)
-                        }
+                        isVideo: false,
+                        allowedMimes: allowedMimes,
+                        maxBytes: maxImageBytes,
+                        limitMessage: "File exceeds 10 MB limit."
                     )
                 }
             }
         }
+    }
+
+    /// Validates the picked media, adds it to the pending bar and uploads it via presigned URL.
+    private func addPendingAttachment(
+        image: UIImage,
+        data: Data,
+        filename: String,
+        mimeType: String,
+        isVideo: Bool,
+        allowedMimes: Set<String>,
+        maxBytes: Int,
+        limitMessage: String
+    ) {
+        let size = data.count
+
+        guard allowedMimes.contains(mimeType), size <= maxBytes else {
+            AlertHelper.showAlert(
+                title: "Invalid file",
+                message: size > maxBytes ? limitMessage : "Unsupported file type.",
+                on: self
+            )
+            return
+        }
+
+        let pending = PendingAttachment(
+            id: UUID(),
+            image: image,
+            filename: filename,
+            mimeType: mimeType,
+            size: size,
+            isVideo: isVideo,
+            state: .uploading,
+            s3Path: nil
+        )
+        pendingAttachments.append(pending)
+        refreshAttachmentsBar()
+        updateSendButtonState()
+
+        API.sharedInstance.requestUploadPresignedUrlWithAuth(
+            taskId: task.id,
+            filename: filename,
+            contentType: mimeType,
+            size: size,
+            callback: { [weak self] presignedUrl, s3Path in
+                guard let self = self,
+                      let presignedUrl = presignedUrl,
+                      let s3Path = s3Path else {
+                    self?.markPending(id: pending.id, state: .failed)
+                    return
+                }
+                API.sharedInstance.uploadFileToS3(
+                    presignedUrl: presignedUrl,
+                    data: data,
+                    contentType: mimeType,
+                    callback: { [weak self] in
+                        self?.markPending(id: pending.id, state: .done, s3Path: s3Path)
+                    },
+                    errorCallback: { [weak self] in
+                        self?.markPending(id: pending.id, state: .failed)
+                    }
+                )
+            },
+            errorCallback: { [weak self] in
+                self?.markPending(id: pending.id, state: .failed)
+            }
+        )
     }
 
     private func markPending(id: UUID, state: PendingAttachmentState, s3Path: String? = nil) {

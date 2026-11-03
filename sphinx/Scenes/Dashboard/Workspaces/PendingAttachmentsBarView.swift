@@ -95,6 +95,16 @@ private class ThumbnailCell: UIView {
         return s
     }()
 
+    private let playIcon: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.image = UIImage(systemName: "play.circle.fill")
+        iv.tintColor = .white
+        iv.contentMode = .scaleAspectFit
+        iv.isHidden = true
+        return iv
+    }()
+
     private let failureOverlay: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
@@ -145,6 +155,7 @@ private class ThumbnailCell: UIView {
         addSubview(imageView)
         addSubview(failureOverlay)
         failureOverlay.addSubview(failureIcon)
+        addSubview(playIcon)
         addSubview(spinner)
         addSubview(removeButton)
 
@@ -167,6 +178,12 @@ private class ThumbnailCell: UIView {
             failureIcon.widthAnchor.constraint(equalToConstant: 28),
             failureIcon.heightAnchor.constraint(equalToConstant: 28),
 
+            // Play icon centered (videos only)
+            playIcon.centerXAnchor.constraint(equalTo: centerXAnchor),
+            playIcon.centerYAnchor.constraint(equalTo: centerYAnchor),
+            playIcon.widthAnchor.constraint(equalToConstant: 28),
+            playIcon.heightAnchor.constraint(equalToConstant: 28),
+
             // Spinner centered
             spinner.centerXAnchor.constraint(equalTo: centerXAnchor),
             spinner.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -179,6 +196,7 @@ private class ThumbnailCell: UIView {
         ])
 
         imageView.image = attachment.image
+        playIcon.isHidden = !attachment.isVideo
 
         switch attachment.state {
         case .uploading:
