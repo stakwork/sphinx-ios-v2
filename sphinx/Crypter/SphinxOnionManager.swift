@@ -321,6 +321,9 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     private let backgroundFetchQueue = DispatchQueue(label: "com.sphinx.backgroundFetch")
     private let fetchLock = NSLock()
     private(set) var backgroundFetchInProgress = false
+    /// True when the foreground path adopted a live background fetch connection
+    /// (see adoptInFlightBackgroundFetch). Cleared on teardown / once consumed.
+    private(set) var joinedBackgroundFetch = false
     var backgroundFetchCompletionHandler: ((UIBackgroundFetchResult) -> Void)?
     var activeFetchBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     private var bgFetchTimeoutTimer: Timer?
@@ -489,6 +492,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         endReconnectionTimer()
         stopWatchdog()
         resetServerHealthStore()
+        joinedBackgroundFetch = false
         connectionTimeoutTimer?.invalidate()
         connectionTimeoutTimer = nil
 
@@ -609,8 +613,34 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         disconnectMqtt()
     }
     
+    /// Joins a live background fetch connection instead of tearing it down when the
+    /// app enters foreground. Releases the background-fetch bookkeeping (timer,
+    /// completion handler, UIBackgroundTask) but leaves MQTT open: since the app is
+    /// now active, finishMessagesFetch keeps the connection. Returns false if no live
+    /// fetch connection exists (nil/disconnecting/disconnected MQTT), so the caller
+    /// falls back to the normal teardown.
+    func adoptInFlightBackgroundFetch() -> Bool {
+        fetchLock.lock()
+        let inProgress = backgroundFetchInProgress
+        fetchLock.unlock()
+
+        guard inProgress, let mqtt = self.mqtt else { return false }
+        let live = mqtt.connState == .connecting || (mqtt.connState == .connected && isConnected)
+        guard live else { return false }
+
+        joinedBackgroundFetch = true
+        print("[BGFetch] foreground joined in-flight fetch (state: \(mqtt.connState))")
+        endBackgroundFetch(result: .newData)
+        return true
+    }
+
     func prepareForForeground(disconnectCallback: @escaping (() -> ())) {
         print("[Lifecycle] prepareForForeground")
+        if adoptInFlightBackgroundFetch() {
+            disconnectCallback()
+            return
+        }
+        joinedBackgroundFetch = false
         // Called from applicationWillEnterForeground before reconnectToServer.
         // Tears down any in-flight BGFetch connection so the foreground reconnect
         // isn't blocked by connectionInProgress or a stale .connecting MQTT state.
@@ -747,6 +777,14 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
                 // Consume the flag now before any other work.
                 print("[MQTT] connectToServer skipped — already connected")
                 consumeInitialSetupIfPending(source: "connectToServer/alreadyConnected")
+                if joinedBackgroundFetch {
+                    joinedBackgroundFetch = false
+                    if isFetchingContent() {
+                        // Joined a live background fetch: its sync is still running.
+                        print("[BGFetch] joined fetch in progress — skipping extra sync")
+                        return
+                    }
+                }
                 if isV2Restore && !UserDefaults.Keys.isRestoreCompleted.get(defaultValue: false) {
                     syncContactsAndMessages()
                 } else {
