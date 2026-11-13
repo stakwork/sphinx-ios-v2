@@ -44,6 +44,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private var pendingFetchWorkItem: DispatchWorkItem?
     private var pendingFetchCompletion: ((UIBackgroundFetchResult) -> Void)?
     
+    private let kAppRefreshTaskIdentifier = "com.gl.sphinx.refresh"
+    /// BGAppRefreshTask in progress. Completed (and set to nil) exactly once, including on expiration
+    private var appRefreshTask: BGTask?
+    /// True while a process launched in background has not entered foreground yet
+    private var launchedInBackground = false
+    
     public enum BuildType: Int {
         case Sideload
         case Testflight
@@ -79,7 +85,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         AppLogger.shared.start()
         
-        isActive = true
+        // When iOS launches the process in background (silent push or BGAppRefreshTask) the app is not
+        // active yet. Setting isActive here made the push handler skip the fetch. On a normal launch
+        // applicationDidBecomeActive sets it to true.
+        launchedInBackground = application.applicationState == .background
+        isActive = !launchedInBackground
         
         NetworkMonitor.shared.startMonitoring()
         
@@ -87,7 +97,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UITableView.appearance().sectionHeaderTopPadding = CGFloat(0)
         }
         
-        //        registerAppRefresh()
+        // Must be registered before the end of app launch
+        registerAppRefresh()
         //        configureStoreKit()
         //        registerForVoIP()
         
@@ -188,6 +199,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         SDImageCache.shared.clearMemory()
         SDWebImageManager.shared.cancelAll()
         presentBiometricIfNeeded()
+        scheduleAppRefresh()
 
         // Hold a background task open until the MQTT socket is fully closed.
         // disconnectMqtt() is async — ending the task before the socket closes
@@ -219,8 +231,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication
     ) {
         print("[Lifecycle] applicationWillEnterForeground")
+        som.startSyncMilestones("Foreground entered")
         
         isActive = true
+        launchedInBackground = false
         pendingFetchWorkItem?.cancel()
         pendingFetchWorkItem = nil
         pendingFetchCompletion?(.noData)
@@ -282,6 +296,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         if !UserData.sharedInstance.isUserLogged() {
             return
+        }
+        
+        // Safety net for a process launched in background that becomes active without
+        // applicationWillEnterForeground: replace the background connection with a foreground one
+        if launchedInBackground {
+            launchedInBackground = false
+            som.startSyncMilestones("Became active after background launch")
+            som.prepareForForeground() {
+                self.getDashboardVC()?.connectToServer()
+            }
         }
         
         handlePushAndFetchData()
@@ -355,11 +379,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         saveCurrentStyle()
     }
     
-//    func registerAppRefresh() {
-//        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.gl.sphinx.refresh", using: nil, launchHandler: { task in
-//            self.handleAppRefresh(task: task)
-//        })
-//    }
+    func registerAppRefresh() {
+        // The launch handler runs on the main queue, like push handling and the background fetch callbacks
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: kAppRefreshTaskIdentifier, using: DispatchQueue.main, launchHandler: { task in
+            MainActor.assumeIsolated {
+                guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+                    task.setTaskCompleted(success: false)
+                    return
+                }
+                appDelegate.handleAppRefresh(task: task)
+            }
+        })
+    }
     
     func configureSDWebImage() {
         SDImageCache.shared.config.maxMemoryCost = 75 * 1024 * 1024 // 75 MB
@@ -595,52 +626,72 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         VideoCallManager.sharedInstance.startVideoCall(link: callLink, audioOnly: audioOnly)
     }
     
-//    func handleAppRefresh(task: BGTask) {
-//        scheduleAppRefresh()
-//        
-//        task.expirationHandler = {
-//            task.setTaskCompleted(success: false)
-//        }
-//        
-//        if isActive || !UserData.sharedInstance.isUserLogged() {
-//            task.setTaskCompleted(success: false)
-//            return
-//        }
-//        
-//        var didEndFetch = false
-//        
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-//            guard !didEndFetch else {
-//                return
-//            }
-//            didEndFetch = true
-//            task.setTaskCompleted(success: false)
-//        }
-//        
-//        som.reconnectToServer(hideRestoreViewCallback: {
-//            guard !didEndFetch else {
-//                return
-//            }
-//            didEndFetch = true
-//            task.setTaskCompleted(success: true)
-//        }, errorCallback: {
-//            guard !didEndFetch else {
-//                return
-//            }
-//            didEndFetch = true
-//            task.setTaskCompleted(success: false)
-//        })
-//    }
-//    
-//    func scheduleAppRefresh() {
-//        let request = BGAppRefreshTaskRequest(identifier: "com.gl.sphinx.refresh")
-//        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
-//        do {
-//            try BGTaskScheduler.shared.submit(request)
-//        } catch {
-//            print("Could not schedule app refresh \(error)")
-//        }
-//    }
+    func handleAppRefresh(task: BGTask) {
+        scheduleAppRefresh()
+        
+        // Complete any previous task first so each one is completed exactly once
+        completeAppRefreshTask(success: false)
+        appRefreshTask = task
+        
+        task.expirationHandler = {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+                        return
+                    }
+                    print("[BGFetch] BGAppRefreshTask expired")
+                    appDelegate.completeAppRefreshTask(success: false)
+                    appDelegate.som.expireBackgroundFetchFromTask()
+                }
+            }
+        }
+        
+        if isActive || !canFetchInBackground() {
+            completeAppRefreshTask(success: true)
+            return
+        }
+        
+        print("[BGFetch] BGAppRefreshTask started")
+        
+        som.beginBackgroundFetch(completionHandler: { result in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    (UIApplication.shared.delegate as? AppDelegate)?.completeAppRefreshTask(success: result != .failed)
+                }
+            }
+        })
+    }
+    
+    func completeAppRefreshTask(success: Bool) {
+        guard let task = appRefreshTask else {
+            return
+        }
+        appRefreshTask = nil
+        print("[BGFetch] BGAppRefreshTask completed (success: \(success))")
+        task.setTaskCompleted(success: success)
+    }
+    
+    func scheduleAppRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: kAppRefreshTaskIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("[BGFetch] Could not schedule app refresh \(error)")
+        }
+    }
+    
+    /// A background fetch needs a logged user with the PIN available in memory
+    /// (it's not when the process was relaunched in background after being killed)
+    func canFetchInBackground() -> Bool {
+        if !UserData.sharedInstance.isUserLogged() {
+            return false
+        }
+        if UserData.sharedInstance.isPinSet() && UserData.sharedInstance.getAppPin() == nil {
+            return false
+        }
+        return true
+    }
 
     //App stylre
     func saveCurrentStyle() {
@@ -715,15 +766,7 @@ extension AppDelegate: @preconcurrency UNUserNotificationCenterDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable : Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
-        if isActive || !UserData.sharedInstance.isUserLogged() {
-            completionHandler(.noData)
-            return
-        }
-        
-        // Skip reconnect if PIN is required but not available in memory
-        // (process was silently relaunched in background after being killed)
-        if UserData.sharedInstance.isPinSet() &&
-           UserData.sharedInstance.getAppPin() == nil {
+        if isActive || !canFetchInBackground() {
             completionHandler(.noData)
             return
         }

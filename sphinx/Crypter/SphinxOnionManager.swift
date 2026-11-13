@@ -12,6 +12,7 @@ import CocoaMQTT
 import ObjectMapper
 import SwiftyJSON
 import CoreData
+import os
 
 
 class SphinxOnionManager : NSObject, @unchecked Sendable {
@@ -325,6 +326,11 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
     var activeFetchBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     private var bgFetchTimeoutTimer: Timer?
 
+    // MARK: Message sync timing
+    /// Unified log for message sync milestones (Console.app: subsystem "com.gl.sphinx", category "MessageSync")
+    static let syncLogger = os.Logger(subsystem: "com.gl.sphinx", category: "MessageSync")
+    private var syncMilestonesStartDate: Date?
+    
     //MARK: Callback
     ///Restore
     var totalMsgsCountCallback: (() -> ())? = nil
@@ -524,14 +530,22 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
 
         fetchLock.lock()
         guard !backgroundFetchInProgress else {
+            // Chain the handlers instead of replacing the in-flight one, which would never be called.
+            // Both complete with the result of the fetch already running.
+            let inFlightCompletionHandler = backgroundFetchCompletionHandler
+            backgroundFetchCompletionHandler = { result in
+                inFlightCompletionHandler?(result)
+                completionHandler(result)
+            }
             fetchLock.unlock()
-            print("[BGFetch] Fetch already in progress — skipping duplicate")
-            backgroundFetchCompletionHandler = completionHandler
+            print("[BGFetch] Fetch already in progress — joining in-flight fetch")
             return
         }
         backgroundFetchInProgress = true
         backgroundFetchCompletionHandler = completionHandler
         fetchLock.unlock()
+        
+        startSyncMilestones("Background fetch started")
 
         activeFetchBackgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "MessageFetch") { [weak self] in
             self?.expireBackgroundFetch()
@@ -590,6 +604,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         }
 
         endReconnectionTimer() // Disarm any timer armed during fetch before signalling the system
+        logSyncMilestone("Background fetch ended (result: \(result.rawValue))")
         print("[BGFetch] completionHandler firing with result: \(result)")
         handler?(result)
 
@@ -597,6 +612,28 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
             UIApplication.shared.endBackgroundTask(taskID)
             print("[BGFetch] UIBackgroundTask ended: \(taskID)")
         }
+    }
+    
+    /// Starts timing a message sync (foreground entry or background fetch) and logs the first milestone
+    func startSyncMilestones(_ milestone: String) {
+        syncMilestonesStartDate = Date()
+        logSyncMilestone(milestone)
+    }
+    
+    /// Logs a message sync milestone with the time elapsed since startSyncMilestones.
+    /// Printed (captured by AppLogger) and sent to the unified log for Console.app
+    func logSyncMilestone(_ milestone: String) {
+        var message = milestone
+        if let startDate = syncMilestonesStartDate {
+            message += " +\(Int(Date().timeIntervalSince(startDate) * 1000))ms"
+        }
+        print("[MessageSync] \(message)")
+        SphinxOnionManager.syncLogger.notice("\(message, privacy: .public)")
+    }
+    
+    /// Ends a background fetch started by a BGAppRefreshTask whose time expired
+    func expireBackgroundFetchFromTask() {
+        expireBackgroundFetch()
     }
 
     private func expireBackgroundFetch() {
@@ -853,6 +890,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         endReconnectionTimer()
         reconnectAttemptCount = 0
         startWatchdog()
+        logSyncMilestone("MQTT connected")
 
         subscribeAndPublishMyTopics(pubkey: pubkey, idx: 0)
 
