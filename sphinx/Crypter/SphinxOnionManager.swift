@@ -526,7 +526,7 @@ class SphinxOnionManager : NSObject, @unchecked Sendable {
         guard !backgroundFetchInProgress else {
             fetchLock.unlock()
             print("[BGFetch] Fetch already in progress — skipping duplicate")
-            backgroundFetchCompletionHandler = completionHandler
+            completionHandler(.noData)
             return
         }
         backgroundFetchInProgress = true
@@ -1456,4 +1456,3 @@ extension SphinxOnionManager {//Sign Up UI Related:
         return nil
     }
 }
-
