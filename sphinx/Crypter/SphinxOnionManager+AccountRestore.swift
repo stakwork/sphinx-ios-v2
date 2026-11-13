@@ -1011,6 +1011,8 @@ extension SphinxOnionManager {
         
         restoredContactInfoTracker = []
         
+        logSyncMilestone("New messages synced (max index: \(maxMessageIndex ?? -1))")
+        
         // Read isActive directly without dispatching to main — DispatchQueue.main.sync
         // can deadlock if the main thread is blocked during app termination, which
         // combined with a background task timeout produces a 0x8BADF00D watchdog kill.
