@@ -464,6 +464,9 @@
 "payment" = "Pago";
 "tribe.payment.sent" = "Pago de %@ enviado a %@";
 "tribe.payment.received" = "%@ ha enviado un pago de %@ a %@";
+"boost.preview.your.message" = "%@ boosted your message: %@ sats";
+"boost.preview.message" = "%@ boosted a message: %@ sats";
+"boost.preview.sent" = "You boosted a message: %@ sats";
 "picture.capitalize" = "Imagen";
 "gif.capitalize" = "Gif";
 "video.capitalize" = "Video";

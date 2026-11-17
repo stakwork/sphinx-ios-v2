@@ -446,6 +446,9 @@
 "payment" = "Pagbabayad";
 "tribe.payment.sent" = "Ang pagbabayad ng %@ ay ipinadala sa %@";
 "tribe.payment.received" = "Nagpadala si %@ ng bayad na %@ sa %@";
+"boost.preview.your.message" = "%@ boosted your message: %@ sats";
+"boost.preview.message" = "%@ boosted a message: %@ sats";
+"boost.preview.sent" = "You boosted a message: %@ sats";
 "picture.capitalize" = "Larawan";
 "gif.capitalize" = "Gif";
 "video.capitalize" = "Video";

@@ -460,6 +460,9 @@
 "payment" = "支付";
 "tribe.payment.sent" = "已向%@发送%@的支付";
 "tribe.payment.received" = "%@向%@发送了%@的支付";
+"boost.preview.your.message" = "%@ boosted your message: %@ sats";
+"boost.preview.message" = "%@ boosted a message: %@ sats";
+"boost.preview.sent" = "You boosted a message: %@ sats";
 "picture.capitalize" = "图片";
 "gif.capitalize" = "GIF";
 "video.capitalize" = "视频";
