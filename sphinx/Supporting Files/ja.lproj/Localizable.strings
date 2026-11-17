@@ -458,6 +458,9 @@
 "payment" = "支払い";
 "tribe.payment.sent" = "%@への支払い%@が送信されました";
 "tribe.payment.received" = "%@から%@の支払いが受信されました";
+"boost.preview.your.message" = "%@ boosted your message: %@ sats";
+"boost.preview.message" = "%@ boosted a message: %@ sats";
+"boost.preview.sent" = "You boosted a message: %@ sats";
 "picture.capitalize" = "画像";
 "gif.capitalize" = "GIF";
 "video.capitalize" = "ビデオ";

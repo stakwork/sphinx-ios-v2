@@ -454,6 +454,9 @@ Derechos de autor © 2020 Sphinx. Todos los derechos reservados.
 "payment" = "支付";
 "tribe.payment.sent" = "向%@發送%@的支付";
 "tribe.payment.received" = "%@向%@發送%@的支付";
+"boost.preview.your.message" = "%@ boosted your message: %@ sats";
+"boost.preview.message" = "%@ boosted a message: %@ sats";
+"boost.preview.sent" = "You boosted a message: %@ sats";
 "picture.capitalize" = "圖片";
 "gif.capitalize" = "Gif";
 "video.capitalize" = "視頻";
